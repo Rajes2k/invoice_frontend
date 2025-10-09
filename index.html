@@ -266,7 +266,7 @@ function uploadFile(file){
 function handleResult(json){
   lastJson = json;
 
-  // Use parsed fields for UI cards
+  // Fill main UI fields from parsed JSON
   const parsed = json.parsed || {};
   invNumEl.textContent = parsed.invoice_number || "—";
   invDateEl.textContent = parsed.invoice_date || "—";
@@ -274,16 +274,17 @@ function handleResult(json){
 
   // Prepare AI typing preview
   const content = json.content || "";
-  const lines = content.split(/\r?\n/).filter(l => l.trim() !== ""); // keep non-empty lines
+  // Split content into lines; preserve meaningful empty lines
+  const lines = content.split(/\r?\n/);
 
   aiPreview.textContent = "";
-  resultEl.textContent = ""; // clear final JSON until typing finishes
+  resultEl.textContent = ""; // final JSON will show after typing
 
   let i = 0;
 
   function typeNextLine() {
     if (i >= lines.length) {
-      // After typing all lines, show full JSON
+      // After typing all lines, show full JSON in result
       resultEl.textContent = JSON.stringify(json, null, 2);
       const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
       downloadJson.href = URL.createObjectURL(blob);
@@ -297,14 +298,16 @@ function handleResult(json){
 
     function typeChar() {
       if (pos >= line.length) {
-        aiPreview.appendChild(document.createElement('br')); // line break
+        aiPreview.appendChild(document.createElement('br')); // new line
         i++;
-        setTimeout(typeNextLine, 200); // delay between lines
+        aiPreview.scrollTop = aiPreview.scrollHeight; // auto-scroll
+        setTimeout(typeNextLine, 200); // small delay between lines
         return;
       }
       aiPreview.textContent += line[pos];
       pos++;
-      setTimeout(typeChar, 15 + Math.random() * 15); // type each character with slight randomness
+      aiPreview.scrollTop = aiPreview.scrollHeight; // scroll while typing
+      setTimeout(typeChar, 15 + Math.random() * 20); // random typing speed
     }
 
     typeChar();
