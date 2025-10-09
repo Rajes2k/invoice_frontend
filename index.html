@@ -84,8 +84,7 @@
           <div class="field"><h4>Total Amount</h4><p id="invTotal">—</p></div>
         </div>
 
-        <h3 style="margin-top:12px;margin-bottom:6px">Extracted content (preview)</h3>
-        <pre id="result" class="result">No data yet</pre>
+
 
         <footer>
           <span class="small"></span>
@@ -99,7 +98,7 @@
     // Replace with your backend Render URL (the /extract endpoint).
     // Example: "https://invoice-extractor-2-835j.onrender.com/extract"
     const API_URL = "https://invoice-extractor-2-835j.onrender.com/extract";
-    document.getElementById('endpoint').textContent = API_URL;
+    document.getElementById('endpointDisplay').textContent = API_URL;
 
     // ---------- UI elements ----------
     const drop = document.getElementById('drop');
