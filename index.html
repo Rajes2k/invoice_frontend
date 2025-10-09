@@ -1,148 +1,309 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>AI Invoice Extractor</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Invoice Extractor</title>
 <style>
+/* === THEME VARIABLES === */
 :root {
-  --bg-dark1:#050812; --bg-dark2:#0a1328;
-  --bg-light1:#f5f8fc; --bg-light2:#e7f1f8;
-  --neon1:#7c3aed; --neon2:#06b6d4;
-  --text-light:#e8eef8; --text-dark:#111827;
-  --muted-dark:#9ca3af; --muted-light:#475569;
-  --shadow:0 0 30px rgba(124,58,237,0.3);
+  --bg: #050812;
+  --bg2: #071327;
+  --card: rgba(255,255,255,0.03);
+  --text: #e6eef8;
+  --muted: #97a9c0;
+  --accent1: #7c3aed;
+  --accent2: #06b6d4;
+  --neon: linear-gradient(90deg,var(--accent1),var(--accent2));
+  --success: #10b981;
+  --danger: #ef4444;
+  --glass: rgba(255,255,255,0.02);
+  --shadow: 0 20px 60px rgba(2,6,23,0.65);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
-html,body{
-  height:100%;margin:0;font-family:"Inter",system-ui,sans-serif;
-  background:linear-gradient(180deg,var(--bg-dark1),var(--bg-dark2));
-  color:var(--text-light);transition:background .6s,color .6s;
+
+:root.light {
+  --bg: #f6f9fb;
+  --bg2: #e9f5fb;
+  --card: rgba(2,6,23,0.02);
+  --text: #041323;
+  --muted: #475569;
+  --shadow: 0 20px 50px rgba(2,6,23,0.06);
 }
-.light{
-  background:linear-gradient(180deg,var(--bg-light1),var(--bg-light2));
-  color:var(--text-dark);
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: radial-gradient(700px 300px at 10% 10%, rgba(124,58,237,0.06), transparent),
+              linear-gradient(180deg,var(--bg),var(--bg2) 65%);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
-.container{max-width:1100px;margin:auto;padding:40px 20px;}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;}
-.logo{font-weight:800;font-size:1.5rem;background:linear-gradient(90deg,var(--neon1),var(--neon2));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.theme-toggle{font-size:1.8rem;cursor:pointer;color:var(--neon2);transition:transform .3s;}
-.theme-toggle:hover{transform:rotate(20deg);}
-.upload-box{border:2px dashed var(--neon2);border-radius:14px;padding:40px;text-align:center;
-  transition:all .4s;}
-.upload-box:hover{box-shadow:var(--shadow);border-color:var(--neon1);}
-button{padding:12px 25px;font-size:1rem;border:none;border-radius:10px;cursor:pointer;
-  background:linear-gradient(90deg,var(--neon1),var(--neon2));color:white;font-weight:600;
-  box-shadow:var(--shadow);transition:all .3s;}
-button:hover{transform:scale(1.05);}
-#resultBox{margin-top:40px;padding:30px;border-radius:16px;background:rgba(255,255,255,0.05);
-  box-shadow:var(--shadow);}
-.field-line{font-family:monospace;font-size:1rem;margin:4px 0;}
-.typing{border-right:2px solid var(--neon2);animation:blink 0.7s infinite;}
-@keyframes blink{50%{border-color:transparent;}}
-.json-box{background:rgba(0,0,0,0.3);padding:20px;border-radius:10px;margin-top:20px;
-  font-family:ui-monospace,monospace;white-space:pre-wrap;display:none;color:#dbeafe;}
-.download-btn{display:none;margin-top:20px;}
-.light .json-box{background:rgba(255,255,255,0.6);color:#111827;}
+
+.app { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.wrap { width: 100%; max-width: 1150px; display: grid; grid-template-columns: 380px 1fr; gap: 18px;
+        border-radius: 16px; padding: 18px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+        box-shadow: var(--shadow); border: 1px solid var(--glass); }
+
+@media(max-width:980px){ .wrap{grid-template-columns:1fr;padding:14px} }
+
+header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; grid-column:1/-1; }
+.logo { width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+       background: var(--neon); font-weight:800; color:white; box-shadow:0 12px 40px rgba(124,58,237,0.18); }
+header h1 { margin:0; font-size:20px; }
+header p.lead { margin:0; font-size:13px; color:var(--muted); }
+
+.toggle { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
+         border:1px solid rgba(255,255,255,0.03); cursor:pointer; font-size:14px; }
+
+.card { background: var(--card); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
+
+.drop { border-radius:12px; padding:20px; min-height:210px; display:flex; flex-direction:column;
+       align-items:center; justify-content:center; gap:12px; border:2px dashed rgba(255,255,255,0.04);
+       cursor:pointer; transition: transform .12s, border-color .12s; text-align:center; }
+.drop.hover { transform: translateY(-6px); border-color: rgba(124,58,237,0.9); }
+
+.controls { display:flex; gap:10px; margin-top:12px; align-items:center; }
+.btn { padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700; }
+.btn.primary { background: var(--neon); color:white; }
+.btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted); }
+
+.progress { height:10px; background: rgba(255,255,255,0.02); border-radius:999px; overflow:hidden; margin-top:12px; }
+.bar { height:100%; width:0%; background: linear-gradient(90deg,#ff6b6b,#ffd166,#06b6d4); transition: width .18s; }
+
+.fields { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; }
+.field { background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+         padding:12px; border-radius:10px; min-width:160px; border:1px solid rgba(255,255,255,0.02); transition: transform .18s; }
+.field:hover { transform: translateY(-6px); }
+.field h4 { margin:0; font-size:12px; color:var(--muted); }
+.field p { margin:6px 0 0; font-size:16px; font-weight:700; }
+
+.ai-preview { background:transparent; padding:14px; border-radius:10px; border:1px dashed rgba(255,255,255,0.03);
+               min-height:120px; font-family: ui-monospace, monospace; color: var(--text); white-space: pre-wrap; }
+
+.result { background: #041323; padding:16px; border-radius:10px; color:#dbeafe; white-space: pre-wrap;
+          max-height:440px; overflow:auto; font-family: ui-monospace, monospace; font-size:13px; border:1px solid rgba(255,255,255,0.03); }
+
+footer.small { color: var(--muted); font-size:13px; }
+
+@media(max-width:900px){ .wrap{grid-template-columns:1fr} .drop{min-height:160px} .logo{width:48px;height:48px} }
+
 </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <div class="logo">⚡ Invoice Extractor</div>
-    <div class="theme-toggle" id="themeToggle" title="Toggle Theme">☾</div>
-  </header>
+<div class="app">
+  <div class="wrap">
+    <!-- HEADER -->
+    <header>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div class="logo">IE</div>
+        <div>
+          <h1>Invoice Extractor</h1>
+          <p class="lead">Drag or click to upload a PDF. Results appear here.</p>
+        </div>
+      </div>
+      <div class="toggle" id="themeToggle" title="Toggle Light/Dark">☾ <span>Theme</span></div>
+    </header>
 
-  <div class="upload-box">
-    <input type="file" id="fileInput" accept="application/pdf" style="display:none;">
-    <label for="fileInput" style="cursor:pointer;">📄 Choose Invoice PDF</label><br><br>
-    <button id="extractBtn">Extract Data</button>
-  </div>
+    <!-- LEFT: UPLOAD -->
+    <div>
+      <div class="card">
+        <div id="drop" class="drop">
+          <strong id="fileName">Click or drop PDF here</strong>
+          <div style="color:var(--muted);font-size:13px;margin-top:6px">Supports single PDF.</div>
+          <input id="fileInput" type="file" accept="application/pdf" style="display:none">
+        </div>
+        <div class="controls">
+          <button id="uploadBtn" class="btn primary">Upload & Extract</button>
+          <button id="clearBtn" class="btn ghost">Clear</button>
+          <div style="flex:1"></div>
+          <div style="font-size:13px;color:var(--muted)">Endpoint: <span id="endpointDisplay" style="color:var(--accent2)"></span></div>
+        </div>
+        <div class="progress"><div id="bar" class="bar"></div></div>
+        <div class="meta" style="margin-top:10px">
+          <div class="chip">Status: <span id="status">Idle</span></div>
+          <div class="chip">Last file: <span id="lastFile">—</span></div>
+          <div class="chip">Bytes: <span id="bytes">0</span></div>
+        </div>
+      </div>
+    </div>
 
-  <div id="resultBox">
-    <div id="typedOutput">Result will appear here...</div>
-    <pre id="jsonOutput" class="json-box"></pre>
-    <button id="downloadBtn" class="download-btn">⬇ Download invoice.json</button>
+    <!-- RIGHT: RESULTS -->
+    <div class="right">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>Extracted fields</h3>
+          <div style="display:flex;gap:8px">
+            <button id="copyBtn" class="btn ghost">Copy JSON</button>
+            <a id="downloadJson" class="btn ghost" href="#" download="invoice.json">Download JSON</a>
+          </div>
+        </div>
+        <div class="fields" style="margin-top:12px">
+          <div class="field"><h4>Invoice Number</h4><p id="invNum">—</p></div>
+          <div class="field"><h4>Invoice Date</h4><p id="invDate">—</p></div>
+          <div class="field"><h4>Total Amount</h4><p id="invTotal">—</p></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>AI typing preview</h4>
+        <div id="aiPreview" class="ai-preview">No data yet</div>
+      </div>
+
+      <div class="card">
+        <h4>Full extracted JSON</h4>
+        <pre id="result" class="result">No data yet</pre>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-const BACKEND_URL="https://invoice-extractor-2-835j.onrender.com/extract";
-const fileInput=document.getElementById("fileInput");
-const extractBtn=document.getElementById("extractBtn");
-const resultBox=document.getElementById("typedOutput");
-const jsonOutput=document.getElementById("jsonOutput");
-const downloadBtn=document.getElementById("downloadBtn");
-const themeToggle=document.getElementById("themeToggle");
+// Backend URL
+const BACKEND_URL = "https://invoice-extractor-2-835j.onrender.com/extract";
+document.getElementById('endpointDisplay').textContent = BACKEND_URL;
 
-let light=false;
-themeToggle.addEventListener("click",()=>{
-  document.body.classList.toggle("light");
-  light=!light;themeToggle.textContent=light?"☀":"☾";
+// ELEMENTS
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('fileInput');
+const uploadBtn = document.getElementById('uploadBtn');
+const clearBtn = document.getElementById('clearBtn');
+const fileNameEl = document.getElementById('fileName');
+const statusEl = document.getElementById('status');
+const bar = document.getElementById('bar');
+const lastFileEl = document.getElementById('lastFile');
+const bytesEl = document.getElementById('bytes');
+const resultEl = document.getElementById('result');
+const invNumEl = document.getElementById('invNum');
+const invDateEl = document.getElementById('invDate');
+const invTotalEl = document.getElementById('invTotal');
+const aiPreview = document.getElementById('aiPreview');
+const copyBtn = document.getElementById('copyBtn');
+const downloadJson = document.getElementById('downloadJson');
+const themeToggle = document.getElementById('themeToggle');
+
+let currentFile = null;
+let lastJson = null;
+
+// Drag & click handlers
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('hover'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('hover'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('hover');
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) selectFile(f);
+});
+fileInput.addEventListener('change', e => { if(e.target.files && e.target.files[0]) selectFile(e.target.files[0]); });
+
+function selectFile(file){
+  if(file.type !== "application/pdf") { alert("Please select a PDF."); return; }
+  currentFile = file;
+  fileNameEl.textContent = file.name;
+  lastFileEl.textContent = file.name;
+  bytesEl.textContent = file.size.toLocaleString() + " bytes";
+  statusEl.textContent = "Ready";
+}
+
+// CLEAR
+clearBtn.addEventListener('click', () => {
+  currentFile=null;
+  fileNameEl.textContent="Click or drop PDF here";
+  resultEl.textContent="No data yet";
+  invNumEl.textContent="—"; invDateEl.textContent="—"; invTotalEl.textContent="—";
+  aiPreview.textContent="No data yet";
+  statusEl.textContent="Idle";
+  bar.style.width="0%";
+  lastJson=null;
+  downloadJson.href="#";
 });
 
-// Upload + extract
-extractBtn.addEventListener("click",async()=>{
-  const file=fileInput.files[0];
-  if(!file)return alert("Please select a PDF file first!");
-  const fd=new FormData();fd.append("file",file);
-  resultBox.innerHTML="<div class='typing'>Processing with AI...</div>";
-  jsonOutput.style.display="none";downloadBtn.style.display="none";
-  try{
-    const res=await fetch(BACKEND_URL,{method:"POST",body:fd});
-    if(!res.ok)throw new Error("Extraction failed");
-    const data=await res.json();
-    const parsed=data.parsed_basic||data.parsed||{};
-    const lines=[
-      `Invoice Number : ${parsed.invoice_number||"N/A"}`,
-      `Invoice Date   : ${parsed.invoice_date||"N/A"}`,
-      `Total Amount   : ${parsed.total_amount||"N/A"}`,
-      `Address        : ${parsed.address||"N/A"}`
-    ];
-    await typeLines(lines);
-    showJson(data);
-  }catch(e){
-    console.error(e);
-    resultBox.innerHTML="<span style='color:red;'>❌ Extraction failed.</span>";
-  }
+// UPLOAD
+uploadBtn.addEventListener('click', async ()=>{
+  if(!currentFile) return alert("Please select a PDF first.");
+  await uploadFile(currentFile);
 });
 
-// Typing animation
-async function typeLines(lines){
-  resultBox.innerHTML="";
-  for(const line of lines){
-    const p=document.createElement("div");
-    p.className="field-line typing";
-    resultBox.appendChild(p);
-    await typeLine(p,line);
-    p.classList.remove("typing");
-    await delay(300);
-  }
+// UPLOAD FUNCTION
+function uploadFile(file){
+  return new Promise(resolve=>{
+    const xhr = new XMLHttpRequest();
+    const fd = new FormData();
+    fd.append('file', file);
+    xhr.open('POST', BACKEND_URL,true);
+    xhr.upload.onprogress = e => {
+      if(e.lengthComputable){
+        const pct = Math.round((e.loaded/e.total)*100);
+        bar.style.width = pct + "%";
+        statusEl.textContent = `Uploading ${pct}%`;
+      }
+    };
+    xhr.onload = ()=>{
+      if(xhr.status>=200 && xhr.status<300){
+        try{
+          const json = JSON.parse(xhr.responseText);
+          statusEl.textContent="Done"; bar.style.width="100%";
+          handleResult(json); resolve(json);
+        } catch(e){ resultEl.textContent="Invalid JSON:\n"+xhr.responseText; return resolve(); }
+      } else { statusEl.textContent=`Error ${xhr.status}`; resultEl.textContent=xhr.responseText; return resolve(); }
+    };
+    xhr.onerror=()=>{ statusEl.textContent="Network error"; resultEl.textContent="Check console."; return resolve(); };
+    statusEl.textContent="Starting upload..."; setTimeout(()=>xhr.send(fd),150);
+  });
 }
-async function typeLine(el,text){
-  for(let i=0;i<text.length;i++){
-    el.textContent=text.slice(0,i+1);
-    await delay(40);
-  }
-}
-function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 
-// Show JSON slowly
-function showJson(data){
-  jsonOutput.textContent=JSON.stringify(data,null,2);
-  setTimeout(()=>{jsonOutput.style.display="block";},800);
-  downloadBtn.style.display="inline-block";
-  downloadBtn.onclick=()=>downloadJSON(data);
+// HANDLE RESULT
+function handleResult(json){
+  lastJson=json;
+  resultEl.textContent=JSON.stringify(json,null,2);
+
+  const parsed=json.llm_parsed || json.parsed || json.parsed_basic || null;
+  if(parsed && typeof parsed==="object"){
+    invNumEl.textContent = parsed.invoice_number || parsed.invoiceNum || parsed.invoice || "—";
+    invDateEl.textContent = parsed.invoice_date || parsed.date || "—";
+    invTotalEl.textContent = parsed.total_amount || parsed.total || parsed.amount || "—";
+  }
+
+  const raw=json.content || json.raw_text || json.text || "";
+  startTyping(raw || "No raw content returned");
+
+  const blob = new Blob([JSON.stringify(json,null,2)],{type:'application/json'});
+  downloadJson.href=URL.createObjectURL(blob);
+
+  copyBtn.onclick=()=>navigator.clipboard.writeText(JSON.stringify(json,null,2)).then(()=>alert("JSON copied!"));
 }
 
-// Download
-function downloadJSON(data){
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
-  const link=document.createElement("a");
-  link.href=URL.createObjectURL(blob);
-  link.download="invoice.json";
-  link.click();
+// AI TYPING
+let typingHandle=null;
+function startTyping(text){
+  if(typingHandle){ clearTimeout(typingHandle); typingHandle=null; }
+  const lines=text.split(/\r?\n/).filter(l=>l.trim().length>0);
+  aiPreview.textContent="";
+  let i=0;
+  const typeNextLine = ()=>{
+    if(i>=lines.length) return;
+    typeLine(lines[i],0,()=>{ aiPreview.appendChild(document.createElement('br')); i++; typingHandle=setTimeout(typeNextLine,220); });
+  };
+  typeNextLine();
 }
+
+function typeLine(line,pos,cb){
+  if(pos>=line.length) return cb();
+  const chunkSize = Math.max(1,Math.round(Math.random()*2.2));
+  aiPreview.textContent += line.slice(pos,pos+chunkSize);
+  const delay = 8+Math.random()*18;
+  setTimeout(()=>typeLine(line,pos+chunkSize,cb),delay);
+}
+
+// THEME TOGGLE
+themeToggle.addEventListener('click', ()=>{
+  document.documentElement.classList.toggle('light');
+  themeToggle.textContent = document.documentElement.classList.contains('light') ? '☀ Theme' : '☾ Theme';
+});
+
 </script>
 </body>
 </html>
