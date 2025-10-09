@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Invoice Extractor</title>
 <style>
 /* === THEME VARIABLES === */
@@ -20,6 +20,7 @@
   --glass: rgba(255,255,255,0.02);
   --shadow: 0 20px 60px rgba(2,6,23,0.65);
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --neon-glow: 0 0 8px var(--accent1), 0 0 16px var(--accent2), 0 0 24px var(--accent1);
 }
 
 :root.light {
@@ -29,65 +30,68 @@
   --text: #041323;
   --muted: #475569;
   --shadow: 0 20px 50px rgba(2,6,23,0.06);
+  --neon-glow: 0 0 8px var(--accent1), 0 0 16px var(--accent2), 0 0 24px var(--accent1);
 }
 
-* { box-sizing: border-box; }
+* { box-sizing:border-box; }
 
-html, body {
-  height: 100%;
-  margin: 0;
+html, body { height:100%; margin:0;
   background: radial-gradient(700px 300px at 10% 10%, rgba(124,58,237,0.06), transparent),
               linear-gradient(180deg,var(--bg),var(--bg2) 65%);
-  color: var(--text);
-  -webkit-font-smoothing: antialiased;
-}
+  color: var(--text); -webkit-font-smoothing: antialiased; }
 
-.app { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.app { min-height: 100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
 .wrap { width: 100%; max-width: 1150px; display: grid; grid-template-columns: 380px 1fr; gap: 18px;
-        border-radius: 16px; padding: 18px;
+        border-radius:16px; padding:18px;
         background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
-        box-shadow: var(--shadow); border: 1px solid var(--glass); }
+        box-shadow: var(--shadow); border:1px solid var(--glass);
+        transition: all 0.3s ease-in-out; }
 
 @media(max-width:980px){ .wrap{grid-template-columns:1fr;padding:14px} }
 
-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; grid-column:1/-1; }
+header { display:flex; align-items:center; justify-content: space-between; margin-bottom:12px; grid-column:1/-1; transition: all 0.3s ease;}
 .logo { width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;
        background: var(--neon); font-weight:800; color:white; box-shadow:0 12px 40px rgba(124,58,237,0.18); }
-header h1 { margin:0; font-size:20px; }
+header h1 { margin:0; font-size:20px; transition: all 0.3s ease; }
 header p.lead { margin:0; font-size:13px; color:var(--muted); }
 
-.toggle { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
-         border:1px solid rgba(255,255,255,0.03); cursor:pointer; font-size:14px; }
+.toggle { display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
+         border:1px solid rgba(255,255,255,0.03); cursor:pointer; font-size:14px; transition: all 0.3s ease; }
 
-.card { background: var(--card); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
+.card { background: var(--card); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.03);
+       transition: all 0.3s ease; }
 
 .drop { border-radius:12px; padding:20px; min-height:210px; display:flex; flex-direction:column;
        align-items:center; justify-content:center; gap:12px; border:2px dashed rgba(255,255,255,0.04);
-       cursor:pointer; transition: transform .12s, border-color .12s; text-align:center; }
-.drop.hover { transform: translateY(-6px); border-color: rgba(124,58,237,0.9); }
+       cursor:pointer; transition: all 0.3s ease; text-align:center; position:relative; }
+.drop::before { content:""; position:absolute; inset:0; border-radius:12px; pointer-events:none;
+                box-shadow: var(--neon-glow); opacity:0; transition: opacity 0.5s ease-in-out; }
+.drop.hover::before { opacity:1; animation: pulseGlow 1.2s infinite alternate; }
+@keyframes pulseGlow { 0%{opacity:0.6} 100%{opacity:1} }
 
 .controls { display:flex; gap:10px; margin-top:12px; align-items:center; }
-.btn { padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700; }
-.btn.primary { background: var(--neon); color:white; }
+.btn { padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700; transition: all 0.3s ease; }
+.btn.primary { background: var(--neon); color:white; box-shadow: var(--neon-glow); }
+.btn.primary:hover { transform: translateY(-2px); }
 .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted); }
+.btn.ghost:hover { background: rgba(124,58,237,0.05); transform: translateY(-2px); }
 
 .progress { height:10px; background: rgba(255,255,255,0.02); border-radius:999px; overflow:hidden; margin-top:12px; }
-.bar { height:100%; width:0%; background: linear-gradient(90deg,#ff6b6b,#ffd166,#06b6d4); transition: width .18s; }
+.bar { height:100%; width:0%; background: linear-gradient(90deg,#7c3aed,#06b6d4,#7c3aed); transition: width .3s ease; }
 
 .fields { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; }
 .field { background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
-         padding:12px; border-radius:10px; min-width:160px; border:1px solid rgba(255,255,255,0.02); transition: transform .18s; }
+         padding:12px; border-radius:10px; min-width:160px; border:1px solid rgba(255,255,255,0.02);
+         transition: transform .18s; }
 .field:hover { transform: translateY(-6px); }
 .field h4 { margin:0; font-size:12px; color:var(--muted); }
 .field p { margin:6px 0 0; font-size:16px; font-weight:700; }
 
 .ai-preview { background:transparent; padding:14px; border-radius:10px; border:1px dashed rgba(255,255,255,0.03);
-               min-height:120px; font-family: ui-monospace, monospace; color: var(--text); white-space: pre-wrap; }
+               min-height:140px; font-family: ui-monospace, monospace; color: var(--text); white-space: pre-wrap; }
 
 .result { background: #041323; padding:16px; border-radius:10px; color:#dbeafe; white-space: pre-wrap;
           max-height:440px; overflow:auto; font-family: ui-monospace, monospace; font-size:13px; border:1px solid rgba(255,255,255,0.03); }
-
-footer.small { color: var(--muted); font-size:13px; }
 
 @media(max-width:900px){ .wrap{grid-template-columns:1fr} .drop{min-height:160px} .logo{width:48px;height:48px} }
 
@@ -96,7 +100,6 @@ footer.small { color: var(--muted); font-size:13px; }
 <body>
 <div class="app">
   <div class="wrap">
-    <!-- HEADER -->
     <header>
       <div style="display:flex;gap:12px;align-items:center">
         <div class="logo">IE</div>
@@ -108,7 +111,6 @@ footer.small { color: var(--muted); font-size:13px; }
       <div class="toggle" id="themeToggle" title="Toggle Light/Dark">☾ <span>Theme</span></div>
     </header>
 
-    <!-- LEFT: UPLOAD -->
     <div>
       <div class="card">
         <div id="drop" class="drop">
@@ -120,7 +122,7 @@ footer.small { color: var(--muted); font-size:13px; }
           <button id="uploadBtn" class="btn primary">Upload & Extract</button>
           <button id="clearBtn" class="btn ghost">Clear</button>
           <div style="flex:1"></div>
-          <div style="font-size:13px;color:var(--muted)">Endpoint: <span id="endpointDisplay" style="color:var(--accent2)"></span></div>
+          <div style="font-size:13px;color:var(--accent2)">Endpoint: <span id="endpointDisplay"></span></div>
         </div>
         <div class="progress"><div id="bar" class="bar"></div></div>
         <div class="meta" style="margin-top:10px">
@@ -131,7 +133,6 @@ footer.small { color: var(--muted); font-size:13px; }
       </div>
     </div>
 
-    <!-- RIGHT: RESULTS -->
     <div class="right">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -162,11 +163,9 @@ footer.small { color: var(--muted); font-size:13px; }
 </div>
 
 <script>
-// Backend URL
 const BACKEND_URL = "https://invoice-extractor-2-835j.onrender.com/extract";
 document.getElementById('endpointDisplay').textContent = BACKEND_URL;
 
-// ELEMENTS
 const drop = document.getElementById('drop');
 const fileInput = document.getElementById('fileInput');
 const uploadBtn = document.getElementById('uploadBtn');
@@ -188,56 +187,51 @@ const themeToggle = document.getElementById('themeToggle');
 let currentFile = null;
 let lastJson = null;
 
-// Drag & click handlers
-drop.addEventListener('click', () => fileInput.click());
-drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('hover'); });
-drop.addEventListener('dragleave', () => drop.classList.remove('hover'));
-drop.addEventListener('drop', e => {
+// Drag & drop handlers
+drop.addEventListener('click', ()=>fileInput.click());
+drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('hover'); });
+drop.addEventListener('dragleave', ()=>drop.classList.remove('hover'));
+drop.addEventListener('drop', e=>{
   e.preventDefault(); drop.classList.remove('hover');
-  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  const f = e.dataTransfer.files[0];
   if(f) selectFile(f);
 });
-fileInput.addEventListener('change', e => { if(e.target.files && e.target.files[0]) selectFile(e.target.files[0]); });
+fileInput.addEventListener('change', e=>{ if(e.target.files[0]) selectFile(e.target.files[0]); });
 
 function selectFile(file){
-  if(file.type !== "application/pdf") { alert("Please select a PDF."); return; }
+  if(file.type!=="application/pdf"){ alert("Please select a PDF"); return; }
   currentFile = file;
-  fileNameEl.textContent = file.name;
-  lastFileEl.textContent = file.name;
-  bytesEl.textContent = file.size.toLocaleString() + " bytes";
-  statusEl.textContent = "Ready";
+  fileNameEl.textContent=file.name;
+  lastFileEl.textContent=file.name;
+  bytesEl.textContent=file.size.toLocaleString()+" bytes";
+  statusEl.textContent="Ready";
 }
 
-// CLEAR
-clearBtn.addEventListener('click', () => {
+// Clear
+clearBtn.addEventListener('click', ()=>{
   currentFile=null;
   fileNameEl.textContent="Click or drop PDF here";
   resultEl.textContent="No data yet";
   invNumEl.textContent="—"; invDateEl.textContent="—"; invTotalEl.textContent="—";
-  aiPreview.textContent="No data yet";
-  statusEl.textContent="Idle";
-  bar.style.width="0%";
-  lastJson=null;
+  aiPreview.textContent="No data yet"; statusEl.textContent="Idle"; bar.style.width="0%"; lastJson=null;
   downloadJson.href="#";
 });
 
-// UPLOAD
+// Upload
 uploadBtn.addEventListener('click', async ()=>{
-  if(!currentFile) return alert("Please select a PDF first.");
+  if(!currentFile) return alert("Select a PDF first");
   await uploadFile(currentFile);
 });
 
-// UPLOAD FUNCTION
 function uploadFile(file){
   return new Promise(resolve=>{
     const xhr = new XMLHttpRequest();
-    const fd = new FormData();
-    fd.append('file', file);
+    const fd = new FormData(); fd.append('file', file);
     xhr.open('POST', BACKEND_URL,true);
-    xhr.upload.onprogress = e => {
+    xhr.upload.onprogress = e=>{
       if(e.lengthComputable){
         const pct = Math.round((e.loaded/e.total)*100);
-        bar.style.width = pct + "%";
+        bar.style.width = pct+"%";
         statusEl.textContent = `Uploading ${pct}%`;
       }
     };
@@ -255,50 +249,48 @@ function uploadFile(file){
   });
 }
 
-// HANDLE RESULT
+// Handle result
 function handleResult(json){
   lastJson=json;
-  resultEl.textContent=JSON.stringify(json,null,2);
-
+  resultEl.textContent="No data yet";
   const parsed=json.llm_parsed || json.parsed || json.parsed_basic || null;
-  if(parsed && typeof parsed==="object"){
-    invNumEl.textContent = parsed.invoice_number || parsed.invoiceNum || parsed.invoice || "—";
-    invDateEl.textContent = parsed.invoice_date || parsed.date || "—";
-    invTotalEl.textContent = parsed.total_amount || parsed.total || parsed.amount || "—";
+
+  if(parsed){
+    invNumEl.textContent=parsed.invoice_number||parsed.invoiceNum||parsed.invoice||"—";
+    invDateEl.textContent=parsed.invoice_date||parsed.date||"—";
+    invTotalEl.textContent=parsed.total_amount||parsed.total||parsed.amount||"—";
   }
 
-  const raw=json.content || json.raw_text || json.text || "";
-  startTyping(raw || "No raw content returned");
+  const raw = [];
+  if(parsed){
+    if(invNumEl.textContent!=="—") raw.push(`Invoice number: ${invNumEl.textContent}`);
+    if(invDateEl.textContent!=="—") raw.push(`Date: ${invDateEl.textContent}`);
+    if(invTotalEl.textContent!=="—") raw.push(`Total: ${invTotalEl.textContent}`);
+  }
+  aiPreview.textContent=""; resultEl.textContent=""; let i=0;
 
-  const blob = new Blob([JSON.stringify(json,null,2)],{type:'application/json'});
-  downloadJson.href=URL.createObjectURL(blob);
-
-  copyBtn.onclick=()=>navigator.clipboard.writeText(JSON.stringify(json,null,2)).then(()=>alert("JSON copied!"));
-}
-
-// AI TYPING
-let typingHandle=null;
-function startTyping(text){
-  if(typingHandle){ clearTimeout(typingHandle); typingHandle=null; }
-  const lines=text.split(/\r?\n/).filter(l=>l.trim().length>0);
-  aiPreview.textContent="";
-  let i=0;
-  const typeNextLine = ()=>{
-    if(i>=lines.length) return;
-    typeLine(lines[i],0,()=>{ aiPreview.appendChild(document.createElement('br')); i++; typingHandle=setTimeout(typeNextLine,220); });
-  };
+  // Type line by line
+  function typeNextLine(){
+    if(i>=raw.length){
+      // After AI typing finish, show full JSON
+      resultEl.textContent = JSON.stringify(json,null,2);
+      const blob = new Blob([JSON.stringify(json,null,2)],{type:'application/json'});
+      downloadJson.href = URL.createObjectURL(blob);
+      copyBtn.onclick = ()=>navigator.clipboard.writeText(JSON.stringify(json,null,2)).then(()=>alert("JSON copied!"));
+      return;
+    }
+    let line = raw[i]; let pos=0;
+    function typeChar(){
+      if(pos>=line.length){ aiPreview.appendChild(document.createElement('br')); i++; setTimeout(typeNextLine,250); return; }
+      aiPreview.textContent += line[pos]; pos++;
+      setTimeout(typeChar, 18+Math.random()*20);
+    }
+    typeChar();
+  }
   typeNextLine();
 }
 
-function typeLine(line,pos,cb){
-  if(pos>=line.length) return cb();
-  const chunkSize = Math.max(1,Math.round(Math.random()*2.2));
-  aiPreview.textContent += line.slice(pos,pos+chunkSize);
-  const delay = 8+Math.random()*18;
-  setTimeout(()=>typeLine(line,pos+chunkSize,cb),delay);
-}
-
-// THEME TOGGLE
+// Theme toggle
 themeToggle.addEventListener('click', ()=>{
   document.documentElement.classList.toggle('light');
   themeToggle.textContent = document.documentElement.classList.contains('light') ? '☀ Theme' : '☾ Theme';
