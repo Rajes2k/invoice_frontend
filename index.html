@@ -56,7 +56,8 @@ header h1 { margin:0; font-size:20px; transition: all 0.3s ease; }
 header p.lead { margin:0; font-size:13px; color:var(--muted); }
 
 .toggle { display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
-         border:1px solid rgba(255,255,255,0.03); cursor:pointer; font-size:14px; transition: all 0.3s ease; }
+         border:1px solid rgba(255,255,255,0.03); cursor:pointer; font-size:14px; transition: all 0.3s ease;
+         box-shadow: var(--neon-glow); }
 
 .card { background: var(--card); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.03);
        transition: all 0.3s ease; }
@@ -219,71 +220,81 @@ clearBtn.addEventListener('click', ()=>{
 
 // Upload
 uploadBtn.addEventListener('click', async ()=>{
-  if(!currentFile) return alert("Select a PDF first");
+  if(!currentFile) return alert("Select PDF first");
   await uploadFile(currentFile);
 });
 
 function uploadFile(file){
   return new Promise(resolve=>{
     const xhr = new XMLHttpRequest();
-    const fd = new FormData(); fd.append('file', file);
-    xhr.open('POST', BACKEND_URL,true);
-    xhr.upload.onprogress = e=>{
+    const fd = new FormData();
+    fd.append('file',file);
+    xhr.open('POST',BACKEND_URL,true);
+    xhr.upload.onprogress=e=>{
       if(e.lengthComputable){
-        const pct = Math.round((e.loaded/e.total)*100);
-        bar.style.width = pct+"%";
-        statusEl.textContent = `Uploading ${pct}%`;
+        const pct = Math.round(e.loaded/e.total*100);
+        bar.style.width=pct+"%";
+        statusEl.textContent=`Uploading ${pct}%`;
       }
     };
-    xhr.onload = ()=>{
+    xhr.onload=()=>{
       if(xhr.status>=200 && xhr.status<300){
         try{
           const json = JSON.parse(xhr.responseText);
           statusEl.textContent="Done"; bar.style.width="100%";
-          handleResult(json); resolve(json);
-        } catch(e){ resultEl.textContent="Invalid JSON:\n"+xhr.responseText; return resolve(); }
-      } else { statusEl.textContent=`Error ${xhr.status}`; resultEl.textContent=xhr.responseText; return resolve(); }
+          handleResult(json);
+          resolve(json);
+        }catch(e){
+          resultEl.textContent="Invalid JSON:\n"+xhr.responseText; resolve();
+        }
+      }else{
+        statusEl.textContent=`Error ${xhr.status}`;
+        resultEl.textContent=`Server returned ${xhr.status}\n${xhr.responseText}`;
+        resolve();
+      }
     };
-    xhr.onerror=()=>{ statusEl.textContent="Network error"; resultEl.textContent="Check console."; return resolve(); };
-    statusEl.textContent="Starting upload..."; setTimeout(()=>xhr.send(fd),150);
+    xhr.onerror=()=>{
+      statusEl.textContent="Network error";
+      resultEl.textContent="Network or CORS error";
+      resolve();
+    };
+    statusEl.textContent="Starting upload...";
+    setTimeout(()=>xhr.send(fd),150);
   });
 }
 
-// Handle result
 function handleResult(json){
   lastJson=json;
-  resultEl.textContent="No data yet";
-  const parsed=json.llm_parsed || json.parsed || json.parsed_basic || null;
+  // Prefer parsed structured
+  const parsed = json.llm_parsed||json.parsed||json.parsed_basic||{};
+  invNumEl.textContent = parsed.invoice_number||parsed.invoiceNum||"—";
+  invDateEl.textContent = parsed.invoice_date||parsed.date||"—";
+  invTotalEl.textContent = parsed.total_amount||parsed.total||parsed.amount||"—";
 
-  if(parsed){
-    invNumEl.textContent=parsed.invoice_number||parsed.invoiceNum||parsed.invoice||"—";
-    invDateEl.textContent=parsed.invoice_date||parsed.date||"—";
-    invTotalEl.textContent=parsed.total_amount||parsed.total||parsed.amount||"—";
-  }
+  // Prepare line-by-line AI preview
+  const lines = [];
+  if(invNumEl.textContent!=="—") lines.push(`Invoice Number: ${invNumEl.textContent}`);
+  if(invDateEl.textContent!=="—") lines.push(`Invoice Date: ${invDateEl.textContent}`);
+  if(invTotalEl.textContent!=="—") lines.push(`Total Amount: ${invTotalEl.textContent}`);
+  // Add remaining fields if exist
+  for(const k in parsed){ if(!["invoice_number","invoiceNum","invoice_date","date","total_amount","total","amount"].includes(k)){
+    lines.push(`${k}: ${parsed[k]}`);
+  }}
 
-  const raw = [];
-  if(parsed){
-    if(invNumEl.textContent!=="—") raw.push(`Invoice number: ${invNumEl.textContent}`);
-    if(invDateEl.textContent!=="—") raw.push(`Date: ${invDateEl.textContent}`);
-    if(invTotalEl.textContent!=="—") raw.push(`Total: ${invTotalEl.textContent}`);
-  }
   aiPreview.textContent=""; resultEl.textContent=""; let i=0;
-
-  // Type line by line
   function typeNextLine(){
-    if(i>=raw.length){
-      // After AI typing finish, show full JSON
+    if(i>=lines.length){
       resultEl.textContent = JSON.stringify(json,null,2);
       const blob = new Blob([JSON.stringify(json,null,2)],{type:'application/json'});
       downloadJson.href = URL.createObjectURL(blob);
       copyBtn.onclick = ()=>navigator.clipboard.writeText(JSON.stringify(json,null,2)).then(()=>alert("JSON copied!"));
       return;
     }
-    let line = raw[i]; let pos=0;
+    let line=lines[i]; let pos=0;
     function typeChar(){
       if(pos>=line.length){ aiPreview.appendChild(document.createElement('br')); i++; setTimeout(typeNextLine,250); return; }
-      aiPreview.textContent += line[pos]; pos++;
-      setTimeout(typeChar, 18+Math.random()*20);
+      aiPreview.textContent+=line[pos]; pos++;
+      setTimeout(typeChar,18+Math.random()*20);
     }
     typeChar();
   }
@@ -293,9 +304,8 @@ function handleResult(json){
 // Theme toggle
 themeToggle.addEventListener('click', ()=>{
   document.documentElement.classList.toggle('light');
-  themeToggle.textContent = document.documentElement.classList.contains('light') ? '☀ Theme' : '☾ Theme';
+  themeToggle.innerHTML = document.documentElement.classList.contains('light') ? '☀ <span>Theme</span>' : '☾ <span>Theme</span>';
 });
-
 </script>
 </body>
 </html>
