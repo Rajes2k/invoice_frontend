@@ -67,7 +67,7 @@
         <div class="progress" style="margin-top:12px"><div id="bar" class="bar"></div></div>
 
         <div style="margin-top:12px" class="small">
-          <div>Endpoint: <strong id="endpointDisplay"></strong></div>
+          <div>Endpoint: <strong id="endpoint"></strong></div>
         </div>
       </div>
 
@@ -99,7 +99,7 @@
     // Replace with your backend Render URL (the /extract endpoint).
     // Example: "https://invoice-extractor-2-835j.onrender.com/extract"
     const API_URL = "https://invoice-extractor-2-835j.onrender.com/extract";
-    document.getElementById('endpointDisplay').textContent = API_URL;
+    document.getElementById('endpoint').textContent = API_URL;
 
     // ---------- UI elements ----------
     const drop = document.getElementById('drop');
