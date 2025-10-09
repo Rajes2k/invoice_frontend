@@ -4,323 +4,245 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Invoice Extractor — Upload & Extract</title>
+  <meta name="description" content="AI invoice extractor — upload PDF, extract fields, LLM-powered parsing. Pretty UI with animations." />
 
-  <!-- 
-    Fancy animated, colorful, responsive frontend.
-    Set BACKEND_URL in the <script> section to your backend extract endpoint.
-  -->
-
+  <!-- ===== COLORS + STYLES ===== -->
   <style>
-    /* -------------------------
-       DESIGN TOKENS / COLORS
-       ------------------------- */
     :root{
-      --bg-1: #0b1020;
-      --bg-2: #071227;
+      --bg-dark-1: #041025;
+      --bg-dark-2: #07142a;
       --card: rgba(255,255,255,0.03);
-      --glass: rgba(255,255,255,0.04);
       --muted: #9fb0c8;
-      --accent-a: #7c3aed;   /* purple */
-      --accent-b: #06b6d4;   /* cyan */
-      --accent-c: #ff6b6b;   /* coral */
-      --accent-d: #ffd166;   /* gold */
+      --accent-a: #7c3aed;
+      --accent-b: #06b6d4;
+      --accent-c: #ff6b6b;
+      --accent-d: #ffd166;
+      --glass-border: rgba(255,255,255,0.03);
       --success: #10b981;
       --danger: #ef4444;
-      --glass-2: rgba(255,255,255,0.02);
-      --soft-shadow: 0 10px 30px rgba(2,6,23,0.65);
-      --glass-border: rgba(255,255,255,0.03);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      --glass: rgba(255,255,255,0.02);
+      --shadow: 0 14px 40px rgba(3,8,25,0.6);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     }
 
-    /* -------------------------
-       RESET + LAYOUT
-       ------------------------- */
-    * { box-sizing: border-box; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+    /* LIGHT THEME VARS (will toggle) */
+    :root.light {
+      --bg-dark-1: #f6f9fb;
+      --bg-dark-2: #e9f2f7;
+      --card: rgba(2,6,23,0.02);
+      --muted: #475569;
+      --glass-border: rgba(2,6,23,0.06);
+      --shadow: 0 14px 40px rgba(2,6,23,0.06);
+      color-scheme: light;
+    }
+
+    /* --- Base --- */
+    *{box-sizing:border-box}
     html,body{height:100%;margin:0;background:
-      radial-gradient(800px 400px at 10% 10%, rgba(124,58,237,0.08), transparent 8%),
-      linear-gradient(180deg,var(--bg-1),var(--bg-2) 60%);
-      color: #e6eef8; font-size:16px; }
+      radial-gradient(900px 380px at 15% 10%, rgba(124,58,237,0.06), transparent 8%),
+      linear-gradient(180deg,var(--bg-dark-1),var(--bg-dark-2) 60%);
+      color:#e6eef8;font-size:16px;-webkit-font-smoothing:antialiased;}
+    .app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;}
 
-    /* container centers, responsive widths */
-    .app {
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:32px;
+    /* container */
+    .wrap{
+      width:100%;max-width:1180px;border-radius:18px;padding:20px;background:
+      linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+      box-shadow:var(--shadow);border:1px solid var(--glass-border);
+      display:grid;grid-template-columns:420px 1fr;gap:18px;position:relative;overflow:visible;
     }
+    @media (max-width:980px){ .wrap{grid-template-columns:1fr;padding:16px} }
 
-    .wrap {
-      width:100%;
-      max-width:1180px;
-      border-radius:20px;
-      padding:26px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      box-shadow: var(--soft-shadow);
-      border:1px solid var(--glass-border);
-      display:grid;
-      grid-template-columns: 440px 1fr;
-      gap:20px;
-      align-items:start;
-      transform: translateY(0);
-      transition: transform .35s ease;
+    /* header */
+    .header {
+      display:flex;align-items:center;gap:14px;margin-bottom:10px;grid-column:1/-1;
     }
+    .logo { width:58px;height:58px;border-radius:12px;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));display:flex;align-items:center;justify-content:center;font-weight:800;color:white;font-size:20px;box-shadow:0 10px 30px rgba(124,58,237,0.15);}
+    .title h1{margin:0;font-size:20px}
+    .title p{margin:4px 0 0;color:var(--muted);font-size:13px}
 
-    /* On smaller screens, stack */
-    @media (max-width:980px){
-      .wrap { grid-template-columns: 1fr; padding:18px; border-radius:16px; gap:12px; }
-    }
+    .project-blurb{margin-left:auto;text-align:right;color:var(--muted);font-size:13px;line-height:1.1}
+    .blink { display:inline-block; padding:2px 8px;border-radius:999px;background:linear-gradient(90deg,var(--accent-a),var(--accent-b)); color:white;font-weight:700; animation:blinkglow 2s linear infinite; }
+    @keyframes blinkglow { 0%{filter:drop-shadow(0 0 0 rgba(124,58,237,0.0))} 50%{filter:drop-shadow(0 10px 36px rgba(6,182,212,0.12))} 100%{filter:drop-shadow(0 0 0 rgba(124,58,237,0.0))} }
 
-    /* -------------------------
-       HEADER
-       ------------------------- */
-    header.top {
-      display:flex;
-      gap:16px;
-      align-items:center;
-      margin-bottom:6px;
-    }
-    .logo {
-      width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));
-      display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 8px 24px rgba(124,58,237,0.14);
-      color:white;font-size:20px;
-    }
-    .title h1 { margin:0;font-size:20px;letter-spacing:0.2px; }
-    .title p { margin:2px 0 0;font-size:13px;color:var(--muted); }
+    /* left card */
+    .card { background:var(--card); padding:16px;border-radius:12px;border:1px solid var(--glass-border); }
+    .drop { border-radius:12px; padding:18px;min-height:220px; display:flex;flex-direction:column; gap:10px; align-items:center; justify-content:center; border:2px dashed rgba(255,255,255,0.04); cursor:pointer; position:relative; transition:transform .15s, box-shadow .15s; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00)); }
+    .drop.hover { transform:translateY(-6px); border-color: rgba(124,58,237,0.9); box-shadow:0 36px 90px rgba(7,12,30,0.45); }
+    .drop svg { filter:drop-shadow(0 8px 24px rgba(2,6,23,0.55)); }
 
-    /* -------------------------
-       LEFT CARD: upload UI
-       ------------------------- */
-    .card {
-      background: var(--card);
-      padding:18px;
-      border-radius:12px;
-      border:1px solid var(--glass-border);
-    }
+    .file-info strong{display:block;margin-top:6px;font-size:16px}
+    .file-info small{color:var(--muted);font-size:13px}
 
-    .drop {
-      border-radius:12px;
-      padding:22px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      align-items:center;
-      justify-content:center;
-      min-height:220px;
-      cursor:pointer;
-      transition: all .18s ease;
-      position:relative;
-      overflow:hidden;
-      border: 2px dashed rgba(255,255,255,0.04);
-      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
-    }
-    .drop::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background: linear-gradient(120deg, rgba(124,58,237,0.02), rgba(6,182,212,0.02));
-      pointer-events:none;
-      mix-blend-mode:overlay;
-    }
-    .drop.hover { transform: translateY(-6px); border-color: rgba(124,58,237,0.9); box-shadow:0 36px 90px rgba(7,12,30,0.45); }
-
-    .drop svg { filter: drop-shadow(0 6px 18px rgba(2,6,23,0.5)); }
-
-    .file-info { text-align:center; }
-    .file-info strong { display:block; margin-top:6px; font-size:16px; }
-    .file-info small { color:var(--muted); font-size:13px; }
-
-    .controls { display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap; }
-    .btn { padding:10px 14px; border-radius:10px; cursor:pointer; border:none; font-weight:700; }
+    .controls { display:flex;gap:10px;margin-top:14px;align-items:center }
+    .btn { padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700 }
     .btn.primary { background:linear-gradient(90deg,var(--accent-a),var(--accent-b)); color:white; box-shadow:0 10px 30px rgba(6,182,212,0.06); }
-    .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted); }
+    .btn.ghost { background:transparent;border:1px solid rgba(255,255,255,0.04); color:var(--muted); }
 
-    .progress { height:10px; background:rgba(255,255,255,0.02); border-radius:999px; overflow:hidden; margin-top:12px; }
-    .bar { height:100%; width:0%; background: linear-gradient(90deg,var(--accent-c),var(--accent-d)); transition: width .25s ease; }
+    .progress{height:10px;background:rgba(255,255,255,0.02);border-radius:999px;overflow:hidden;margin-top:12px}
+    .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-c),var(--accent-d));transition:width .2s}
 
-    .meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .meta { display:flex;gap:8px;flex-wrap:wrap;margin-top:12px }
+    .chip { background:rgba(255,255,255,0.02); padding:8px 10px;border-radius:999px;font-size:13px;color:var(--muted) }
 
-    .chip { padding:8px 10px; border-radius:999px; background:rgba(255,255,255,0.02); font-size:13px; color:var(--muted); }
+    /* right column */
+    .right { display:flex;flex-direction:column;gap:12px; }
+    .panel { background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01)); padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03); box-shadow:0 8px 30px rgba(2,6,23,0.35); }
 
-    /* -------------------------
-       RIGHT: results area (nitbox style)
-       ------------------------- */
-    .right-col { display:flex; flex-direction:column; gap:12px; }
-    .nitbox {
-      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
-      padding:16px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,0.03);
-      box-shadow: 0 6px 20px rgba(2,6,23,0.45);
-      min-height:150px;
-    }
+    .fields { display:flex;gap:12px;flex-wrap:wrap;margin-top:10px }
+    .field { min-width:180px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00)); padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02); transition:transform .15s, box-shadow .15s }
+    .field:hover { transform:translateY(-6px); box-shadow:0 16px 36px rgba(2,6,23,0.45) }
+    .field h4{margin:0;font-size:12px;color:var(--muted)}
+    .field p{margin:8px 0 0;font-size:18px;font-weight:800}
 
-    .fields { display:flex; gap:12px; flex-wrap:wrap; }
-    .field {
-      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
-      padding:12px;
-      border-radius:10px;
-      min-width:190px;
-      flex:1;
-      border:1px solid rgba(255,255,255,0.02);
-      transition: transform .18s ease, box-shadow .18s ease;
-    }
-    .field:hover { transform: translateY(-6px); box-shadow: 0 14px 30px rgba(2,6,23,0.45); }
-    .field h4 { margin:0;font-size:12px;color:var(--muted) }
-    .field p { margin:8px 0 0; font-size:18px; font-weight:700; }
+    pre.result{background:#041323;padding:16px;border-radius:10px;color:#dbeafe;white-space:pre-wrap;max-height:520px;overflow:auto;border:1px solid rgba(255,255,255,0.03); font-family: var(--mono); font-size:13px;}
 
-    pre.result { background:#041323;padding:16px;border-radius:12px;color:#dbeafe;white-space:pre-wrap; max-height:520px; overflow:auto; border:1px solid rgba(255,255,255,0.03); }
+    footer.small{color:var(--muted);font-size:13px}
 
-    footer.small { color:var(--muted); font-size:13px; margin-top:4px; }
+    .controls-right { display:flex;gap:8px;align-items:center; }
 
-    /* -------------------------
-       Decorative shapes + animations
-       ------------------------- */
-    .sparkles {
-      position:absolute; inset:auto; right:-40px; top:-40px; width:240px; height:240px;
-      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.04), transparent 10%),
-                  radial-gradient(circle at 80% 80%, rgba(6,182,212,0.04), transparent 15%);
-      filter: blur(18px); transform: rotate(10deg); pointer-events:none; opacity:0.7;
-    }
+    /* theme toggle look */
+    .toggle { display:inline-flex;align-items:center;gap:8px;padding:8px;border-radius:999px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03); cursor:pointer; }
 
-    /* animated gradient border around the drop area */
-    .drop .glow {
-      position:absolute; inset:-2px; border-radius:14px; z-index:0; pointer-events:none; mix-blend-mode:screen;
-      background: linear-gradient(90deg, rgba(124,58,237,0.18), rgba(6,182,212,0.18), rgba(255,107,107,0.14), rgba(255,209,102,0.12));
-      animation: slowspin 10s linear infinite;
-      opacity:0;
-      transition:opacity .4s;
-    }
-    .drop.hover .glow { opacity:1; }
+    /* confetti canvas overlay */
+    #confetti-canvas{ position:fixed; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:9999; }
 
-    @keyframes slowspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    /* typing effect container */
+    .ai-typing { font-family: var(--mono); white-space:pre-wrap; font-size:14px; line-height:1.45; color:#e6eef8; min-height:90px; }
 
-    /* full-screen mobile friendly adjustments */
-    @media (max-width:520px) {
-      .wrap{ padding:14px; gap:10px; border-radius:12px; }
-      .logo{ width:48px; height:48px; font-size:18px; border-radius:10px; }
-      .drop { min-height:160px; padding:14px; }
-      .field { min-width:130px; font-size:14px; }
-      pre.result { font-size:13px; max-height:300px; }
-    }
+    /* blinking caret */
+    .caret { display:inline-block; width:10px; animation:blink 1s steps(2) infinite; }
+    @keyframes blink { 0% {opacity:1} 50%{opacity:0} 100%{opacity:1} }
 
-    /* tiny helper utilities */
-    .muted { color:var(--muted); font-size:13px; }
-    .hidden { display:none; }
-    .center { text-align:center; }
+    /* small responsive */
+    @media (max-width:520px){ .wrap{padding:12px} .logo{width:48px;height:48px} .drop{min-height:160px} .field{min-width:140px} pre.result{font-size:12px} }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <div class="wrap" role="main" aria-label="Invoice Extractor application">
+    <div class="wrap" id="wrap">
 
-      <!-- LEFT: Upload card -->
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between; margin-bottom:12px;">
-          <div style="display:flex;gap:12px;align-items:center">
-            <div class="logo">IE</div>
-            <div class="title">
-              <h1>Invoice Extractor — Upload & Extract</h1>
-              <p class="muted">Select or drag a PDF. Results appear to the right. Securely calls your hosted backend.</p>
-            </div>
+      <!-- HEADER row -->
+      <div class="header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="logo">IE</div>
+          <div class="title">
+            <h1>Invoice Extractor <span class="blink">AI</span></h1>
+            <p>Upload invoice PDFs — AI extracts invoice number, date, amounts, vendor, items and more.</p>
           </div>
-          <div class="muted">v1 • interactive</div>
         </div>
 
+        <div class="project-blurb">
+          <div style="font-weight:700">Invoice Extractor — LLM Agent</div>
+          <div class="muted" style="margin-top:4px; max-width:320px; text-align:right;">
+            Professionally built: PDF parsing (pdfplumber/PyPDF2), optional LLM for smart extraction. Hosted on Render (frontend static + Flask backend). Designed for accuracy, speed and friendly UI.
+          </div>
+        </div>
+      </div>
+
+      <!-- LEFT: upload -->
+      <div>
         <div class="card">
-          <div id="drop" class="drop" tabindex="0" aria-label="Drop PDF here">
-            <div class="glow"></div> <!-- decorative gradient glow -->
-            <!-- SVG upload icon -->
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <div id="drop" class="drop" role="button" tabindex="0" aria-label="Drop PDF here">
+            <svg width="68" height="68" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path d="M12 3v9" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M8 7l4-4 4 4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
 
             <div class="file-info">
               <strong id="fileName">Click or drop PDF here</strong>
-              <small class="muted">Supports single PDF. Max size depends on your server.</small>
+              <small class="muted">Supports single PDF. Use machine-readable PDFs for best results.</small>
             </div>
 
             <input id="fileInput" type="file" accept="application/pdf" style="display:none" />
-
-            <div style="width:90%; margin-top:10px" class="center muted">Tip: For best accuracy use standard invoice PDFs (text-based, not images).</div>
           </div>
 
-          <div class="controls">
+          <div class="controls" style="margin-top:12px">
             <button id="uploadBtn" class="btn primary">Upload & Extract</button>
             <button id="clearBtn" class="btn ghost">Clear</button>
+
             <div style="flex:1"></div>
-            <div class="muted">Endpoint: <strong id="endpointDisplay" style="color:var(--accent-b);"></strong></div>
+
+            <div class="toggle" id="themeToggle" title="Toggle light / dark">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div style="font-size:13px;color:var(--muted)">Theme</div>
+            </div>
           </div>
 
-          <div class="progress" aria-hidden><div id="bar" class="bar"></div></div>
+          <div class="progress"><div id="bar" class="bar" style="width:0%"></div></div>
+
           <div class="meta">
             <div class="chip">Status: <span id="status">Idle</span></div>
             <div class="chip">Last file: <span id="lastFile">—</span></div>
             <div class="chip">Bytes received: <span id="bytes">0</span></div>
           </div>
+
+          <div style="margin-top:14px;color:var(--muted);font-size:13px">
+            Endpoint:
+            <div style="word-break:break-all;margin-top:6px"><strong id="endpointDisplay" style="color:var(--accent-b)"></strong></div>
+          </div>
         </div>
       </div>
 
-      <!-- RIGHT: Results -->
-      <div class="right-col">
-        <div class="nitbox">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div class="muted">Invoice summary</div>
-              <h3 style="margin:6px 0 0">Extracted fields</h3>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <div style="font-size:12px;color:var(--muted)">LLM provider: <strong id="llmProvider">—</strong></div>
-              <div style="width:10px;height:10px;border-radius:50%;background:var(--success)" id="llmLed" title="LLM status"></div>
+      <!-- RIGHT: results -->
+      <div class="right">
+        <div class="panel" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div>
+            <div class="muted">Invoice summary</div>
+            <h2 style="margin:6px 0 0">Extracted fields</h2>
+            <div style="margin-top:6px;color:var(--muted);font-size:13px">AI-powered extraction. Results appear below (you may toggle theme or download JSON).</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+            <div style="font-size:13px;color:var(--muted)">LLM provider: <strong id="llmProvider">—</strong></div>
+            <div style="display:flex;gap:8px">
+              <a id="downloadJson" class="btn ghost" href="#" download="invoice.json">Download JSON</a>
+              <button id="copyBtn" class="btn ghost">Copy JSON</button>
             </div>
           </div>
-
-          <div style="margin-top:12px" class="fields" id="fieldsArea">
-            <div class="field">
-              <h4>Invoice Number</h4><p id="invNum">—</p>
-            </div>
-            <div class="field">
-              <h4>Invoice Date</h4><p id="invDate">—</p>
-            </div>
-            <div class="field">
-              <h4>Total Amount</h4><p id="invTotal">—</p>
-            </div>
-          </div>
-
         </div>
 
-        <div class="nitbox">
-          <h4 style="margin:0 0 8px">Extracted content (preview)</h4>
+        <div class="panel">
+          <div class="fields" id="fieldsArea">
+            <div class="field"><h4>Invoice Number</h4><p id="invNum">—</p></div>
+            <div class="field"><h4>Invoice Date</h4><p id="invDate">—</p></div>
+            <div class="field"><h4>Total Amount</h4><p id="invTotal">—</p></div>
+            <div class="field"><h4>Currency</h4><p id="invCurrency">—</p></div>
+            <div class="field"><h4>Vendor</h4><p id="invVendor">—</p></div>
+            <div class="field"><h4>Customer</h4><p id="invCustomer">—</p></div>
+            <div class="field"><h4>Tax Amount</h4><p id="invTax">—</p></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h4 style="margin:0 0 8px">AI typing preview</h4>
+          <div id="aiPreview" class="ai-typing">No data yet <span class="caret">▍</span></div>
+          <footer class="small" style="margin-top:8px;color:var(--muted)">If you see CORS errors check backend CORS settings (allow your frontend origin).</footer>
+        </div>
+
+        <div class="panel">
+          <h4 style="margin:0 0 8px">Raw / full extracted content</h4>
           <pre id="result" class="result">No data yet</pre>
-          <footer class="small">If you see a CORS error in the browser console, ensure backend allows this frontend origin.</footer>
-        </div>
-
-        <div class="nitbox center">
-          <div style="display:flex;gap:10px;align-items:center;justify-content:center;">
-            <a id="downloadJson" class="btn ghost" style="text-decoration:none;color:var(--muted)" href="#" download="invoice-extraction.json">Download JSON</a>
-            <button id="copyBtn" class="btn ghost">Copy JSON</button>
-          </div>
         </div>
       </div>
 
-      <!-- decorative sparkles -->
-      <div class="sparkles" aria-hidden></div>
+      <!-- confetti canvas -->
+      <canvas id="confetti-canvas"></canvas>
     </div>
   </div>
 
-  <!-- -------------------------
-       SCRIPT: UI + Upload logic
-       ------------------------- -->
+  <!-- ===== SCRIPTS ===== -->
   <script>
-    /* -------------------------
-       CONFIG: set your backend endpoint here
-       ------------------------- */
-    const BACKEND_URL = "https://invoice-extractor-2-835j.onrender.com/extract"; // <<=== change if needed
+    /****************************************************************
+     * CONFIG - set your backend extract endpoint here (HTTPS)
+     ****************************************************************/
+    const BACKEND_URL = "https://invoice-extractor-2-835j.onrender.com/extract";
     document.getElementById('endpointDisplay').textContent = BACKEND_URL;
 
-    /* UI elements */
+    /****************************************************************
+     * UI element bindings
+     ****************************************************************/
     const drop = document.getElementById('drop');
     const fileInput = document.getElementById('fileInput');
     const uploadBtn = document.getElementById('uploadBtn');
@@ -334,62 +256,54 @@
     const invNumEl = document.getElementById('invNum');
     const invDateEl = document.getElementById('invDate');
     const invTotalEl = document.getElementById('invTotal');
+    const invCurrencyEl = document.getElementById('invCurrency');
+    const invVendorEl = document.getElementById('invVendor');
+    const invCustomerEl = document.getElementById('invCustomer');
+    const invTaxEl = document.getElementById('invTax');
+    const aiPreview = document.getElementById('aiPreview');
     const llmProviderEl = document.getElementById('llmProvider');
-    const llmLed = document.getElementById('llmLed');
     const downloadJson = document.getElementById('downloadJson');
     const copyBtn = document.getElementById('copyBtn');
+    const themeToggle = document.getElementById('themeToggle');
+    const confettiCanvas = document.getElementById('confetti-canvas');
 
     let currentFile = null;
     let lastJson = null;
+    let typingAbort = false;
 
-    /* drag + click */
+    /* Drag & drop */
     drop.addEventListener('click', ()=> fileInput.click());
-    drop.addEventListener('dragover', (e)=>{ e.preventDefault(); drop.classList.add('hover'); });
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('hover'); });
     drop.addEventListener('dragleave', ()=> drop.classList.remove('hover'));
-    drop.addEventListener('drop', (e)=> {
-      e.preventDefault(); drop.classList.remove('hover');
-      const f = e.dataTransfer.files && e.dataTransfer.files[0];
-      if (f) selectFile(f);
-    });
-    fileInput.addEventListener('change', (e)=> { if (e.target.files && e.target.files[0]) selectFile(e.target.files[0]); });
+    drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('hover'); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) selectFile(f); });
+    fileInput.addEventListener('change', e => { if (e.target.files && e.target.files[0]) selectFile(e.target.files[0]); });
 
-    /* file select */
     function selectFile(file){
-      if (file.type !== "application/pdf") {
-        alert("Please select a PDF file.");
-        return;
-      }
+      if (file.type !== "application/pdf") { alert("Please select a PDF file."); return; }
       currentFile = file;
       fileNameEl.textContent = file.name;
       lastFileEl.textContent = file.name;
       bytesEl.textContent = file.size.toLocaleString() + " bytes";
     }
 
-    /* clear */
-    clearBtn.addEventListener('click', ()=> {
-      currentFile = null;
-      fileNameEl.textContent = "Click or drop PDF here";
-      resultEl.textContent = "No data yet";
-      invNumEl.textContent = "—";
-      invDateEl.textContent = "—";
-      invTotalEl.textContent = "—";
-      statusEl.textContent = "Idle";
-      bar.style.width = "0%";
-      lastFileEl.textContent = "—";
-      bytesEl.textContent = "0";
-      lastJson = null;
-      downloadJson.href = "#";
+    clearBtn.addEventListener('click', () => {
+      currentFile=null; fileNameEl.textContent="Click or drop PDF here"; resultEl.textContent="No data yet";
+      invNumEl.textContent="—"; invDateEl.textContent="—"; invTotalEl.textContent="—";
+      invCurrencyEl.textContent="—"; invVendorEl.textContent="—"; invCustomerEl.textContent="—";
+      invTaxEl.textContent="—"; aiPreview.textContent="No data yet ▍"; statusEl.textContent="Idle"; bar.style.width="0%";
+      lastJson=null; downloadJson.href="#";
     });
 
-    /* upload */
-    uploadBtn.addEventListener('click', async ()=> {
+    uploadBtn.addEventListener('click', async () => {
       if (!currentFile) return alert("Please select a PDF file first.");
       await uploadFile(currentFile);
     });
 
-    /* Upload with progress using XMLHttpRequest for progress events */
+    /****************************************************************
+     * Upload function with progress (XHR used to show progress)
+     ****************************************************************/
     function uploadFile(file){
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         const xhr = new XMLHttpRequest();
         const fd = new FormData();
         fd.append('file', file);
@@ -417,107 +331,247 @@
             return resolve(json);
           } else {
             statusEl.textContent = `Error ${xhr.status}`;
-            let message = `Server returned status ${xhr.status}\n\n${xhr.responseText}`;
-            resultEl.textContent = message;
-            // show LLM provider if backend returns info
-            try {
-              const obj = JSON.parse(xhr.responseText || "{}");
-              if (obj.llm_provider) setLLM(obj.llm_provider);
-            } catch(e){}
+            resultEl.textContent = `Server returned status ${xhr.status}\n\n${xhr.responseText}`;
+            console.error("Server error", xhr.status, xhr.responseText);
+            // Try to read provider
+            try { const obj = JSON.parse(xhr.responseText||"{}"); if(obj.llm_provider) setLLM(obj.llm_provider); } catch(e){}
             return resolve();
           }
         };
 
         xhr.onerror = () => {
           statusEl.textContent = "Network error";
-          resultEl.textContent = "Network or CORS error. Check console for details.";
-          console.error("Upload error", xhr);
+          resultEl.textContent = "Network or CORS error. Check browser console for details.";
+          console.error("XHR network error", xhr);
           return resolve();
         };
 
-        // small UX delay
         statusEl.textContent = "Starting upload...";
-        setTimeout(()=> xhr.send(fd), 180);
+        setTimeout(()=> xhr.send(fd), 150);
       });
     }
 
-    /* display + extract basic fields heuristics if needed */
+    /****************************************************************
+     * Handle returned JSON from backend and display fields.
+     * Supports many shapes:
+     *  - { llm_parsed: {...}, raw_text: "...", content: "...", llm_provider: "groq" }
+     *  - { parsed: {...} }
+     *  - { parsed_basic: {...} }
+     ****************************************************************/
     function handleResult(json){
       lastJson = json;
       resultEl.textContent = JSON.stringify(json, null, 2);
 
-      // If backend returns parsed JSON in `llm_parsed` or `parsed`, use it.
-      const parsed = json.llm_parsed || json.parsed || json.parsed_basic || json.llm_parsed || json.llm_parsed;
+      // Set provider if provided
+      if (json.llm_provider) setLLM(json.llm_provider); else setLLM("none");
+
+      // Prefer structured parsed objects
+      const parsed = json.llm_parsed || json.parsed || json.parsed_basic || json.parsed || null;
+
+      // Reset typing
+      typingAbort = true;
+
+      // If we have parsed object -> fill fields
       if (parsed && typeof parsed === 'object') {
         invNumEl.textContent = parsed.invoice_number || parsed.invoice_num || parsed.invoiceNo || parsed.invoice || "—";
         invDateEl.textContent = parsed.invoice_date || parsed.date || parsed.invoiceDate || "—";
         invTotalEl.textContent = parsed.total_amount || parsed.amount || parsed.total || "—";
+        invCurrencyEl.textContent = parsed.currency || parsed.curr || parsed.ccy || "—";
+        invVendorEl.textContent = parsed.vendor || parsed.seller || parsed.supplier || "—";
+        invCustomerEl.textContent = parsed.customer || parsed.bill_to || parsed.client || "—";
+        invTaxEl.textContent = parsed.tax_amount || parsed.tax || parsed.tax_total || "—";
       } else {
-        // fallback: try to scan `content` or `raw_text`
+        // fallback heuristics on any text content
         const text = (json.content || json.raw_text || json.text || "") + "";
         invNumEl.textContent = findPattern(text, /\b(?:Invoice\s*(?:No|Number|#)[:\s-]*)\s*([A-Z0-9-\/]+)/i) || "—";
-        invDateEl.textContent = findPattern(text, /\b(?:Invoice\s*Date|Date)[:\s]*([0-9]{1,2}[-\/.][0-9]{1,2}[-\/.][0-9]{2,4})/i) || "—";
-        invTotalEl.textContent = findPattern(text, /\b(?:Grand Total|Total Due|Total|Amount Due)[:\s]*([$₹£€]?[0-9,]+(?:\.[0-9]{2})?)/i) || "—";
+        invDateEl.textContent = findPattern(text, /\b(?:Invoice\s*Date|Date|Order Date)[:\s]*([0-9]{1,2}[-\/.][0-9]{1,2}[-\/.][0-9]{2,4})/i) || "—";
+        invTotalEl.textContent = findPattern(text, /\b(?:Grand\s*Total|Total\s*Due|Total|Amount Due)[:\s]*([₹$£€]?\s*[0-9,]+(?:\.[0-9]{2})?)/i) || "—";
+        invCurrencyEl.textContent = findPattern(text, /\b(USD|INR|EUR|GBP|AUD|CAD|₹|\$|£|€)\b/i) || "—";
+        invVendorEl.textContent = findPattern(text, /Sold By[:\s]*([A-Za-z0-9\.,&\-\s]+)/i) || findPattern(text, /From[:\s]*([A-Za-z0-9\.,&\-\s]+)/i) || "—";
+        invCustomerEl.textContent = findPattern(text, /Bill To[:\s]*([A-Za-z0-9\.,&\-\s]+)/i) || "—";
+        invTaxEl.textContent = findPattern(text, /Tax(?:es| Amount| Total)?[:\s]*([₹$£€]?\s*[0-9,]+(?:\.[0-9]{2})?)/i) || "—";
       }
 
-      // set LLM provider if backend included it
-      if (json.llm_provider) setLLM(json.llm_provider);
-      else setLLM("none");
+      // start nice typewriter AI reveal of the most useful lines (prefer LLM cleaned output then raw_text/content)
+      const bigText = (json.llm_output_text || json.content || json.raw_text || json.text || "");
+      startAITyping(bigText || "No textual content returned.");
 
-      // prepare download link for JSON
+      // prepare download link
       try {
         const blob = new Blob([JSON.stringify(json, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        downloadJson.href = url;
-        downloadJson.style.pointerEvents = "auto";
-      } catch(e){
+        downloadJson.href = URL.createObjectURL(blob);
+      } catch(e) {
         downloadJson.href = "#";
       }
+
+      // confetti if good data (if total exists)
+      const hasTotal = (invTotalEl.textContent && invTotalEl.textContent !== "—");
+      if (hasTotal) { launchConfetti(); }
+
+      // show done status
+      statusEl.textContent = "Done";
     }
 
-    /* set LLM display */
     function setLLM(name){
       llmProviderEl.textContent = name || "none";
-      if (name && name !== "none") {
-        llmLed.style.background = "var(--accent-b)";
-      } else {
-        llmLed.style.background = "var(--danger)";
-      }
     }
 
-    /* find pattern helper */
     function findPattern(text, re){
       if (!text) return null;
       const m = text.match(re);
       return m ? (m[1] || m[0]) : null;
     }
 
-    /* copy JSON to clipboard */
+    /****************************************************************
+     * AI typing reveal: prints text line-by-line with a typing effect.
+     * If called again we abort the previous typing and start fresh.
+     ****************************************************************/
+    async function startAITyping(longText){
+      typingAbort = true; // signal previous to stop
+      await new Promise(r => setTimeout(r, 50));
+      typingAbort = false;
+      aiPreview.textContent = "";
+      const lines = splitForTyping(longText, 30, 6);
+      for (let i=0;i<lines.length && !typingAbort;i++){
+        await typeLine(lines[i]);
+        if (typingAbort) break;
+        // small pause between lines
+        await new Promise(r => setTimeout(r, 220));
+      }
+      if (!typingAbort) {
+        // careful done caret
+        aiPreview.innerHTML = aiPreview.innerHTML.replace(/▍$/, "");
+      }
+    }
+
+    // break text into sensible lines; keeps words intact
+    function splitForTyping(text, approxChars=60, maxLines=20){
+      if (!text) return ["No data"];
+      // clean up multiple newlines
+      let t = text.replace(/\r/g,"").split(/\n+/).map(s=>s.trim()).filter(Boolean);
+      if (t.length === 0) return ["No data"];
+      // limit
+      if (t.length > maxLines) t = t.slice(0, maxLines);
+      // further split long paragraphs
+      const out=[];
+      for (const p of t){
+        if (p.length <= approxChars) out.push(p);
+        else {
+          let words = p.split(/\s+/);
+          let cur="";
+          for (const w of words){
+            if ((cur + " " + w).trim().length <= approxChars) cur = (cur + " " + w).trim();
+            else { out.push(cur); cur=w; }
+          }
+          if (cur) out.push(cur);
+        }
+      }
+      return out;
+    }
+
+    // type one line with char-by-char animation
+    function typeLine(line){
+      return new Promise(async (resolve) => {
+        const caret = "▍";
+        let i=0;
+        aiPreview.textContent = (aiPreview.textContent || "") + "";
+        // ensure caret at end
+        if (!aiPreview.textContent.endsWith(caret)) aiPreview.textContent = aiPreview.textContent + caret;
+        while (i <= line.length && !typingAbort){
+          // remove caret, append substring, add caret
+          aiPreview.textContent = (aiPreview.textContent.replace(/▍$/,"") + line.slice(0,i) + "▍");
+          const wait = 8 + Math.random()*18; // variable typing speed
+          await new Promise(r => setTimeout(r, wait));
+          i++;
+        }
+        // finalize this line: remove caret, add newline + caret
+        if (!typingAbort) aiPreview.textContent = aiPreview.textContent.replace(/▍$/,"") + line + "\n▍";
+        resolve();
+      });
+    }
+
+    /****************************************************************
+     * Theme toggle: toggles a 'light' class on root to switch vars
+     ****************************************************************/
+    themeToggle.addEventListener('click', () => {
+      const root = document.documentElement;
+      if (root.classList.contains('light')) { root.classList.remove('light'); localStorage.setItem('theme','dark'); }
+      else { root.classList.add('light'); localStorage.setItem('theme','light'); }
+    });
+    // restore
+    if (localStorage.getItem('theme') === 'light') document.documentElement.classList.add('light');
+
+    /****************************************************************
+     * Copy & download JSON
+     ****************************************************************/
     copyBtn.addEventListener('click', async () => {
       if (!lastJson) { alert("No JSON to copy yet."); return; }
       try {
         await navigator.clipboard.writeText(JSON.stringify(lastJson, null, 2));
         copyBtn.textContent = "Copied ✓";
-        setTimeout(()=> copyBtn.textContent = "Copy JSON", 1500);
-      } catch(e){
-        alert("Copy failed: " + (e && e.message ? e.message : e));
+        setTimeout(()=> copyBtn.textContent = "Copy JSON", 1600);
+      } catch(e){ alert("Copy failed: "+(e.message||e)); }
+    });
+
+    /****************************************************************
+     * Confetti: small implementation (no external libs)
+     ****************************************************************/
+    const confettiCtx = confettiCanvas.getContext ? confettiCanvas.getContext('2d') : null;
+    let confettiPieces = [];
+    function launchConfetti(){
+      if (!confettiCtx) return;
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+      confettiPieces = [];
+      const colors = ['#7c3aed','#06b6d4','#ff6b6b','#ffd166','#10b981'];
+      for (let i=0;i<60;i++){
+        confettiPieces.push({
+          x: Math.random()*confettiCanvas.width,
+          y: -Math.random()*confettiCanvas.height,
+          vx: (Math.random()-0.5)*6,
+          vy: 2 + Math.random()*6,
+          rot: Math.random()*360,
+          size: 6+Math.random()*12,
+          color: colors[Math.floor(Math.random()*colors.length)],
+          life: 0,
+          ttl: 120 + Math.random()*80
+        });
+      }
+      let ticks = 0;
+      const anim = ()=> {
+        confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+        for (const p of confettiPieces){
+          p.x += p.vx; p.y += p.vy; p.vy*=1.01; p.rot += p.vx*2; p.life++;
+          confettiCtx.save();
+          confettiCtx.translate(p.x,p.y);
+          confettiCtx.rotate(p.rot*Math.PI/180);
+          confettiCtx.fillStyle = p.color;
+          confettiCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
+          confettiCtx.restore();
+        }
+        ticks++;
+        if (ticks < 240) requestAnimationFrame(anim);
+        else confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+      };
+      anim();
+    }
+    // resize canvas on resize
+    window.addEventListener('resize', ()=> {
+      if (confettiCanvas.width !== window.innerWidth || confettiCanvas.height !== window.innerHeight){
+        confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight;
       }
     });
 
-    /* keyboard accessibility: press Enter on drop to open chooser */
-    drop.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') fileInput.click();
-    });
+    /****************************************************************
+     * Small helpful console instructions
+     ****************************************************************/
+    console.info("Invoice Extractor frontend loaded. Backend endpoint:", BACKEND_URL);
 
-    /* On page load: small animated intro */
-    window.addEventListener('load', ()=>{
-      setTimeout(()=> {
-        document.querySelector('.wrap').style.transform = 'translateY(-4px)';
-      }, 200);
-    });
+    /****************************************************************
+     * Accessibility: keyboard open file chooser
+     ****************************************************************/
+    drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
 
-    /* Helpful console tip */
-    console.info("Invoice Extractor frontend initialized. Backend:", BACKEND_URL);
   </script>
 </body>
 </html>
