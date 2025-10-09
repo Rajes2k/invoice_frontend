@@ -1,269 +1,146 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>AI Invoice Extractor</title>
 <style>
 :root {
-  --neon-blue: #00d4ff;
-  --neon-purple: #b026ff;
-  --dark-bg: #0b0b15;
-  --light-bg: #f8f8fa;
-  --text-dark: #f8f8fa;
-  --text-light: #0b0b15;
-  --accent: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
-  --shadow: 0 0 20px rgba(176, 38, 255, 0.5);
+  --bg-dark1:#050812; --bg-dark2:#0a1328;
+  --bg-light1:#f5f8fc; --bg-light2:#e7f1f8;
+  --neon1:#7c3aed; --neon2:#06b6d4;
+  --text-light:#e8eef8; --text-dark:#111827;
+  --muted-dark:#9ca3af; --muted-light:#475569;
+  --shadow:0 0 30px rgba(124,58,237,0.3);
 }
-
-body {
-  font-family: 'Poppins', sans-serif;
-  background: var(--dark-bg);
-  color: var(--text-dark);
-  margin: 0;
-  transition: background 0.6s, color 0.6s;
-  overflow-x: hidden;
+html,body{
+  height:100%;margin:0;font-family:"Inter",system-ui,sans-serif;
+  background:linear-gradient(180deg,var(--bg-dark1),var(--bg-dark2));
+  color:var(--text-light);transition:background .6s,color .6s;
 }
-
-body.light {
-  background: var(--light-bg);
-  color: var(--text-light);
+.light{
+  background:linear-gradient(180deg,var(--bg-light1),var(--bg-light2));
+  color:var(--text-dark);
 }
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
-  background: rgba(255,255,255,0.05);
-  box-shadow: var(--shadow);
-}
-
-.logo {
-  font-size: 1.6rem;
-  font-weight: bold;
-  background: var(--accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.theme-toggle {
-  cursor: pointer;
-  font-size: 1.8rem;
-  color: var(--neon-blue);
-  transition: transform 0.3s;
-}
-.theme-toggle:hover { transform: rotate(20deg); }
-
-.main {
-  text-align: center;
-  padding: 60px 20px;
-}
-
-.upload-box {
-  margin: 20px auto;
-  border: 2px dashed var(--neon-blue);
-  padding: 40px;
-  width: 70%;
-  border-radius: 20px;
-  transition: all 0.4s;
-}
-
-.upload-box:hover {
-  border-color: var(--neon-purple);
-  box-shadow: 0 0 20px var(--neon-purple);
-}
-
-input[type="file"] {
-  display: none;
-}
-
-label {
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 10px 25px;
-  border-radius: 10px;
-  background: var(--accent);
-  color: white;
-  box-shadow: var(--shadow);
-  transition: all 0.4s;
-}
-label:hover {
-  opacity: 0.9;
-}
-
-button {
-  margin-top: 25px;
-  background: var(--accent);
-  border: none;
-  color: white;
-  font-size: 1.1rem;
-  padding: 12px 30px;
-  border-radius: 12px;
-  cursor: pointer;
-  box-shadow: var(--shadow);
-  transition: all 0.3s;
-}
-button:hover {
-  transform: scale(1.05);
-  opacity: 0.9;
-}
-
-#result {
-  margin-top: 50px;
-  padding: 40px;
-  width: 95%;
-  max-width: 1200px;
-  margin-inline: auto;
-  background: rgba(255,255,255,0.05);
-  border-radius: 20px;
-  box-shadow: var(--shadow);
-  text-align: left;
-  font-size: 1.1rem;
-  overflow-wrap: break-word;
-  min-height: 200px;
-}
-
-.json-box {
-  background: rgba(0,0,0,0.3);
-  border-radius: 12px;
-  padding: 15px;
-  margin-top: 25px;
-  font-family: monospace;
-  white-space: pre-wrap;
-  display: none;
-}
-
-.download-btn {
-  display: none;
-  margin-top: 20px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  cursor: pointer;
-  box-shadow: var(--shadow);
-  transition: all 0.3s;
-}
-.download-btn:hover { transform: scale(1.05); }
-
-.typing {
-  border-right: 3px solid var(--neon-blue);
-  animation: blink 0.7s steps(1) infinite;
-}
-
-@keyframes blink {
-  50% { border-color: transparent; }
-}
+.container{max-width:1100px;margin:auto;padding:40px 20px;}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;}
+.logo{font-weight:800;font-size:1.5rem;background:linear-gradient(90deg,var(--neon1),var(--neon2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.theme-toggle{font-size:1.8rem;cursor:pointer;color:var(--neon2);transition:transform .3s;}
+.theme-toggle:hover{transform:rotate(20deg);}
+.upload-box{border:2px dashed var(--neon2);border-radius:14px;padding:40px;text-align:center;
+  transition:all .4s;}
+.upload-box:hover{box-shadow:var(--shadow);border-color:var(--neon1);}
+button{padding:12px 25px;font-size:1rem;border:none;border-radius:10px;cursor:pointer;
+  background:linear-gradient(90deg,var(--neon1),var(--neon2));color:white;font-weight:600;
+  box-shadow:var(--shadow);transition:all .3s;}
+button:hover{transform:scale(1.05);}
+#resultBox{margin-top:40px;padding:30px;border-radius:16px;background:rgba(255,255,255,0.05);
+  box-shadow:var(--shadow);}
+.field-line{font-family:monospace;font-size:1rem;margin:4px 0;}
+.typing{border-right:2px solid var(--neon2);animation:blink 0.7s infinite;}
+@keyframes blink{50%{border-color:transparent;}}
+.json-box{background:rgba(0,0,0,0.3);padding:20px;border-radius:10px;margin-top:20px;
+  font-family:ui-monospace,monospace;white-space:pre-wrap;display:none;color:#dbeafe;}
+.download-btn{display:none;margin-top:20px;}
+.light .json-box{background:rgba(255,255,255,0.6);color:#111827;}
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">⚡ AI Invoice Extractor</div>
-  <div class="theme-toggle" id="themeToggle" title="Toggle Theme">☾</div>
-</header>
+<div class="container">
+  <header>
+    <div class="logo">⚡ Invoice Extractor</div>
+    <div class="theme-toggle" id="themeToggle" title="Toggle Theme">☾</div>
+  </header>
 
-<section class="main">
-  <h1>Upload your invoice PDF</h1>
-  <div class="upload-box" id="uploadBox">
-    <form id="uploadForm">
-      <input type="file" id="fileInput" accept="application/pdf">
-      <label for="fileInput">Choose Invoice PDF</label><br>
-      <button type="submit">Extract Data ⤵</button>
-    </form>
+  <div class="upload-box">
+    <input type="file" id="fileInput" accept="application/pdf" style="display:none;">
+    <label for="fileInput" style="cursor:pointer;">📄 Choose Invoice PDF</label><br><br>
+    <button id="extractBtn">Extract Data</button>
   </div>
-  <div id="result">Result will appear here...</div>
-  <button class="download-btn" id="downloadBtn">⬇ Download invoice.json</button>
-</section>
+
+  <div id="resultBox">
+    <div id="typedOutput">Result will appear here...</div>
+    <pre id="jsonOutput" class="json-box"></pre>
+    <button id="downloadBtn" class="download-btn">⬇ Download invoice.json</button>
+  </div>
+</div>
 
 <script>
-const BACKEND_URL = "https://invoice-extractor-2-835j.onrender.com/extract"; 
-const resultBox = document.getElementById("result");
-const downloadBtn = document.getElementById("downloadBtn");
-const themeToggle = document.getElementById("themeToggle");
+const BACKEND_URL="https://invoice-extractor-2-835j.onrender.com/extract";
+const fileInput=document.getElementById("fileInput");
+const extractBtn=document.getElementById("extractBtn");
+const resultBox=document.getElementById("typedOutput");
+const jsonOutput=document.getElementById("jsonOutput");
+const downloadBtn=document.getElementById("downloadBtn");
+const themeToggle=document.getElementById("themeToggle");
 
-let lightMode = false;
-
-// THEME SWITCH
-themeToggle.addEventListener("click", () => {
+let light=false;
+themeToggle.addEventListener("click",()=>{
   document.body.classList.toggle("light");
-  lightMode = !lightMode;
-  themeToggle.textContent = lightMode ? "☀" : "☾";
+  light=!light;themeToggle.textContent=light?"☀":"☾";
 });
 
-// FILE UPLOAD
-document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const fileInput = document.getElementById("fileInput");
-  if (!fileInput.files.length) return alert("Please select a PDF file first!");
-
-  const formData = new FormData();
-  formData.append("file", fileInput.files[0]);
-  resultBox.innerHTML = `<div class="typing">Extracting data with AI...</div>`;
-
-  try {
-    const res = await fetch(BACKEND_URL, { method: "POST", body: formData });
-    if (!res.ok) throw new Error("Extraction failed");
-    const data = await res.json();
-
-    const extracted = data.parsed_basic || {};
-    const typingData = [
-      `Invoice Number : ${extracted.invoice_number || "N/A"}`,
-      `Invoice Date   : ${extracted.invoice_date || "N/A"}`,
-      `Total Amount   : ${extracted.total_amount || "N/A"}`
+// Upload + extract
+extractBtn.addEventListener("click",async()=>{
+  const file=fileInput.files[0];
+  if(!file)return alert("Please select a PDF file first!");
+  const fd=new FormData();fd.append("file",file);
+  resultBox.innerHTML="<div class='typing'>Processing with AI...</div>";
+  jsonOutput.style.display="none";downloadBtn.style.display="none";
+  try{
+    const res=await fetch(BACKEND_URL,{method:"POST",body:fd});
+    if(!res.ok)throw new Error("Extraction failed");
+    const data=await res.json();
+    const parsed=data.parsed_basic||data.parsed||{};
+    const lines=[
+      `Invoice Number : ${parsed.invoice_number||"N/A"}`,
+      `Invoice Date   : ${parsed.invoice_date||"N/A"}`,
+      `Total Amount   : ${parsed.total_amount||"N/A"}`,
+      `Address        : ${parsed.address||"N/A"}`
     ];
-
-    await aiTypingEffect(typingData);
-    showJSON(data);
-
-  } catch (err) {
-    console.error(err);
-    resultBox.innerHTML = `<span style="color:red;">❌ Extraction failed. Try again.</span>`;
+    await typeLines(lines);
+    showJson(data);
+  }catch(e){
+    console.error(e);
+    resultBox.innerHTML="<span style='color:red;'>❌ Extraction failed.</span>";
   }
 });
 
-// AI TYPING EFFECT
-async function aiTypingEffect(lines) {
-  resultBox.innerHTML = "";
-  for (const line of lines) {
-    const p = document.createElement("div");
-    p.className = "typing";
+// Typing animation
+async function typeLines(lines){
+  resultBox.innerHTML="";
+  for(const line of lines){
+    const p=document.createElement("div");
+    p.className="field-line typing";
     resultBox.appendChild(p);
-    await typeLine(p, line);
+    await typeLine(p,line);
     p.classList.remove("typing");
-    await delay(400);
+    await delay(300);
   }
 }
-
-async function typeLine(element, text) {
-  for (let i = 0; i < text.length; i++) {
-    element.textContent = text.slice(0, i + 1);
+async function typeLine(el,text){
+  for(let i=0;i<text.length;i++){
+    el.textContent=text.slice(0,i+1);
     await delay(40);
   }
 }
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 
-function delay(ms) { return new Promise(res => setTimeout(res, ms)); }
-
-// SHOW JSON BOX
-function showJSON(data) {
-  const jsonBox = document.createElement("div");
-  jsonBox.className = "json-box";
-  jsonBox.textContent = JSON.stringify(data, null, 2);
-  resultBox.appendChild(jsonBox);
-
-  setTimeout(() => { jsonBox.style.display = "block"; }, 1000);
-  downloadBtn.style.display = "inline-block";
-
-  downloadBtn.onclick = () => downloadJSON(data);
+// Show JSON slowly
+function showJson(data){
+  jsonOutput.textContent=JSON.stringify(data,null,2);
+  setTimeout(()=>{jsonOutput.style.display="block";},800);
+  downloadBtn.style.display="inline-block";
+  downloadBtn.onclick=()=>downloadJSON(data);
 }
 
-// DOWNLOAD JSON
-function downloadJSON(data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "invoice.json";
+// Download
+function downloadJSON(data){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob);
+  link.download="invoice.json";
   link.click();
 }
 </script>
