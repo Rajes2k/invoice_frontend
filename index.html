@@ -46,7 +46,7 @@
       <div class="logo">IE</div>
       <div>
         <h1>Invoice Extractor — Upload & Extract</h1>
-        <p class="lead">Select or drag a PDF invoice. Result shows below. Connected to your hosted backend.</p>
+        <p class="lead">Select or drag a PDF invoice. Result shows below. Connected to GROQ (LLM)</p>
       </div>
     </header>
 
@@ -55,7 +55,7 @@
         <div id="drop" class="drop">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M12 3v9" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7l4-4 4 4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <strong id="fileName">Click or drop PDF here</strong>
-          <small>Supports single PDF. Max size depends on your server.</small>
+          <small>Supports single PDF</small>
           <input id="fileInput" type="file" accept="application/pdf" style="display:none"/>
         </div>
 
@@ -88,7 +88,7 @@
         <pre id="result" class="result">No data yet</pre>
 
         <footer>
-          <span class="small">If you see a CORS error in the browser console, add CORS to your Flask app (instructions below).</span>
+          <span class="small"></span>
         </footer>
       </div>
     </div>
