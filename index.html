@@ -1,222 +1,523 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Invoice Extractor — Upload & Extract</title>
 
+  <!-- 
+    Fancy animated, colorful, responsive frontend.
+    Set BACKEND_URL in the <script> section to your backend extract endpoint.
+  -->
+
   <style>
-    :root {
-      --bg-dark: #0e1320;
-      --card-bg: #181f33;
-      --accent: #00c6ff;
-      --accent2: #0072ff;
-      --text: #e2e8f0;
-      --muted: #94a3b8;
+    /* -------------------------
+       DESIGN TOKENS / COLORS
+       ------------------------- */
+    :root{
+      --bg-1: #0b1020;
+      --bg-2: #071227;
+      --card: rgba(255,255,255,0.03);
+      --glass: rgba(255,255,255,0.04);
+      --muted: #9fb0c8;
+      --accent-a: #7c3aed;   /* purple */
+      --accent-b: #06b6d4;   /* cyan */
+      --accent-c: #ff6b6b;   /* coral */
+      --accent-d: #ffd166;   /* gold */
+      --success: #10b981;
+      --danger: #ef4444;
+      --glass-2: rgba(255,255,255,0.02);
+      --soft-shadow: 0 10px 30px rgba(2,6,23,0.65);
+      --glass-border: rgba(255,255,255,0.03);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     }
 
-    body {
-      font-family: "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, var(--bg-dark), #1b263b);
-      color: var(--text);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
+    /* -------------------------
+       RESET + LAYOUT
+       ------------------------- */
+    * { box-sizing: border-box; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+    html,body{height:100%;margin:0;background:
+      radial-gradient(800px 400px at 10% 10%, rgba(124,58,237,0.08), transparent 8%),
+      linear-gradient(180deg,var(--bg-1),var(--bg-2) 60%);
+      color: #e6eef8; font-size:16px; }
+
+    /* container centers, responsive widths */
+    .app {
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px;
     }
 
-    h1 {
-      font-size: 1.8rem;
-      text-align: center;
-      margin-top: 30px;
-      background: linear-gradient(to right, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      color: transparent;
+    .wrap {
+      width:100%;
+      max-width:1180px;
+      border-radius:20px;
+      padding:26px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      box-shadow: var(--soft-shadow);
+      border:1px solid var(--glass-border);
+      display:grid;
+      grid-template-columns: 440px 1fr;
+      gap:20px;
+      align-items:start;
+      transform: translateY(0);
+      transition: transform .35s ease;
     }
 
-    .container {
-      width: 90%;
-      max-width: 900px;
-      background: var(--card-bg);
-      border-radius: 20px;
-      padding: 25px;
-      margin-top: 20px;
-      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+    /* On smaller screens, stack */
+    @media (max-width:980px){
+      .wrap { grid-template-columns: 1fr; padding:18px; border-radius:16px; gap:12px; }
     }
 
-    .upload-area {
-      border: 2px dashed var(--accent);
-      border-radius: 15px;
-      height: 180px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      background: rgba(255, 255, 255, 0.03);
+    /* -------------------------
+       HEADER
+       ------------------------- */
+    header.top {
+      display:flex;
+      gap:16px;
+      align-items:center;
+      margin-bottom:6px;
     }
-
-    .upload-area:hover {
-      background: rgba(255, 255, 255, 0.08);
+    .logo {
+      width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));
+      display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 8px 24px rgba(124,58,237,0.14);
+      color:white;font-size:20px;
     }
+    .title h1 { margin:0;font-size:20px;letter-spacing:0.2px; }
+    .title p { margin:2px 0 0;font-size:13px;color:var(--muted); }
 
-    input[type="file"] {
-      display: none;
-    }
-
-    button {
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 16px;
-      cursor: pointer;
-      font-weight: bold;
-      margin-top: 15px;
-      transition: all 0.3s;
-    }
-
-    button:hover {
-      opacity: 0.85;
-      transform: translateY(-1px);
-    }
-
-    .stats {
-      display: flex;
-      justify-content: space-around;
-      flex-wrap: wrap;
-      margin: 20px 0;
-      gap: 15px;
-    }
-
+    /* -------------------------
+       LEFT CARD: upload UI
+       ------------------------- */
     .card {
-      background: #0f172a;
-      border-radius: 10px;
-      padding: 12px 16px;
-      min-width: 150px;
-      text-align: center;
+      background: var(--card);
+      padding:18px;
+      border-radius:12px;
+      border:1px solid var(--glass-border);
     }
 
-    .card span {
-      display: block;
-      font-size: 0.85rem;
-      color: var(--muted);
+    .drop {
+      border-radius:12px;
+      padding:22px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      align-items:center;
+      justify-content:center;
+      min-height:220px;
+      cursor:pointer;
+      transition: all .18s ease;
+      position:relative;
+      overflow:hidden;
+      border: 2px dashed rgba(255,255,255,0.04);
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+    }
+    .drop::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(120deg, rgba(124,58,237,0.02), rgba(6,182,212,0.02));
+      pointer-events:none;
+      mix-blend-mode:overlay;
+    }
+    .drop.hover { transform: translateY(-6px); border-color: rgba(124,58,237,0.9); box-shadow:0 36px 90px rgba(7,12,30,0.45); }
+
+    .drop svg { filter: drop-shadow(0 6px 18px rgba(2,6,23,0.5)); }
+
+    .file-info { text-align:center; }
+    .file-info strong { display:block; margin-top:6px; font-size:16px; }
+    .file-info small { color:var(--muted); font-size:13px; }
+
+    .controls { display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap; }
+    .btn { padding:10px 14px; border-radius:10px; cursor:pointer; border:none; font-weight:700; }
+    .btn.primary { background:linear-gradient(90deg,var(--accent-a),var(--accent-b)); color:white; box-shadow:0 10px 30px rgba(6,182,212,0.06); }
+    .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted); }
+
+    .progress { height:10px; background:rgba(255,255,255,0.02); border-radius:999px; overflow:hidden; margin-top:12px; }
+    .bar { height:100%; width:0%; background: linear-gradient(90deg,var(--accent-c),var(--accent-d)); transition: width .25s ease; }
+
+    .meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+
+    .chip { padding:8px 10px; border-radius:999px; background:rgba(255,255,255,0.02); font-size:13px; color:var(--muted); }
+
+    /* -------------------------
+       RIGHT: results area (nitbox style)
+       ------------------------- */
+    .right-col { display:flex; flex-direction:column; gap:12px; }
+    .nitbox {
+      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+      padding:16px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.03);
+      box-shadow: 0 6px 20px rgba(2,6,23,0.45);
+      min-height:150px;
     }
 
-    .card h3 {
-      margin: 5px 0;
-      font-size: 1.2rem;
-      color: var(--accent);
+    .fields { display:flex; gap:12px; flex-wrap:wrap; }
+    .field {
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+      padding:12px;
+      border-radius:10px;
+      min-width:190px;
+      flex:1;
+      border:1px solid rgba(255,255,255,0.02);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .field:hover { transform: translateY(-6px); box-shadow: 0 14px 30px rgba(2,6,23,0.45); }
+    .field h4 { margin:0;font-size:12px;color:var(--muted) }
+    .field p { margin:8px 0 0; font-size:18px; font-weight:700; }
+
+    pre.result { background:#041323;padding:16px;border-radius:12px;color:#dbeafe;white-space:pre-wrap; max-height:520px; overflow:auto; border:1px solid rgba(255,255,255,0.03); }
+
+    footer.small { color:var(--muted); font-size:13px; margin-top:4px; }
+
+    /* -------------------------
+       Decorative shapes + animations
+       ------------------------- */
+    .sparkles {
+      position:absolute; inset:auto; right:-40px; top:-40px; width:240px; height:240px;
+      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.04), transparent 10%),
+                  radial-gradient(circle at 80% 80%, rgba(6,182,212,0.04), transparent 15%);
+      filter: blur(18px); transform: rotate(10deg); pointer-events:none; opacity:0.7;
     }
 
-    pre {
-      background: #0a1123;
-      padding: 15px;
-      border-radius: 10px;
-      max-height: 400px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      font-size: 0.9rem;
-      color: #cbd5e1;
+    /* animated gradient border around the drop area */
+    .drop .glow {
+      position:absolute; inset:-2px; border-radius:14px; z-index:0; pointer-events:none; mix-blend-mode:screen;
+      background: linear-gradient(90deg, rgba(124,58,237,0.18), rgba(6,182,212,0.18), rgba(255,107,107,0.14), rgba(255,209,102,0.12));
+      animation: slowspin 10s linear infinite;
+      opacity:0;
+      transition:opacity .4s;
+    }
+    .drop.hover .glow { opacity:1; }
+
+    @keyframes slowspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* full-screen mobile friendly adjustments */
+    @media (max-width:520px) {
+      .wrap{ padding:14px; gap:10px; border-radius:12px; }
+      .logo{ width:48px; height:48px; font-size:18px; border-radius:10px; }
+      .drop { min-height:160px; padding:14px; }
+      .field { min-width:130px; font-size:14px; }
+      pre.result { font-size:13px; max-height:300px; }
     }
 
-    .footer {
-      margin-top: 25px;
-      font-size: 0.85rem;
-      color: var(--muted);
-      text-align: center;
-    }
+    /* tiny helper utilities */
+    .muted { color:var(--muted); font-size:13px; }
+    .hidden { display:none; }
+    .center { text-align:center; }
   </style>
 </head>
+
 <body>
-  <h1>📄 Invoice Extractor</h1>
-  <div class="container">
-    <label for="fileInput" class="upload-area" id="dropArea">
-      <p id="fileName">Click or drag a PDF file here</p>
-      <input type="file" id="fileInput" accept="application/pdf" />
-    </label>
-    <div style="text-align:center;">
-      <button id="uploadBtn">Upload & Extract</button>
-      <button id="clearBtn" style="background:#334155;">Clear</button>
-    </div>
+  <div class="app">
+    <div class="wrap" role="main" aria-label="Invoice Extractor application">
 
-    <div class="stats">
-      <div class="card"><span>Invoice Number</span><h3 id="invoiceNumber">—</h3></div>
-      <div class="card"><span>Invoice Date</span><h3 id="invoiceDate">—</h3></div>
-      <div class="card"><span>Total Amount</span><h3 id="totalAmount">—</h3></div>
-    </div>
+      <!-- LEFT: Upload card -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between; margin-bottom:12px;">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div class="logo">IE</div>
+            <div class="title">
+              <h1>Invoice Extractor — Upload & Extract</h1>
+              <p class="muted">Select or drag a PDF. Results appear to the right. Securely calls your hosted backend.</p>
+            </div>
+          </div>
+          <div class="muted">v1 • interactive</div>
+        </div>
 
-    <h3>🧾 Extracted Content</h3>
-    <pre id="output">No content yet...</pre>
+        <div class="card">
+          <div id="drop" class="drop" tabindex="0" aria-label="Drop PDF here">
+            <div class="glow"></div> <!-- decorative gradient glow -->
+            <!-- SVG upload icon -->
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M12 3v9" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 7l4-4 4 4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
 
-    <div class="footer">
-      Connected securely to backend ✓
+            <div class="file-info">
+              <strong id="fileName">Click or drop PDF here</strong>
+              <small class="muted">Supports single PDF. Max size depends on your server.</small>
+            </div>
+
+            <input id="fileInput" type="file" accept="application/pdf" style="display:none" />
+
+            <div style="width:90%; margin-top:10px" class="center muted">Tip: For best accuracy use standard invoice PDFs (text-based, not images).</div>
+          </div>
+
+          <div class="controls">
+            <button id="uploadBtn" class="btn primary">Upload & Extract</button>
+            <button id="clearBtn" class="btn ghost">Clear</button>
+            <div style="flex:1"></div>
+            <div class="muted">Endpoint: <strong id="endpointDisplay" style="color:var(--accent-b);"></strong></div>
+          </div>
+
+          <div class="progress" aria-hidden><div id="bar" class="bar"></div></div>
+          <div class="meta">
+            <div class="chip">Status: <span id="status">Idle</span></div>
+            <div class="chip">Last file: <span id="lastFile">—</span></div>
+            <div class="chip">Bytes received: <span id="bytes">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="right-col">
+        <div class="nitbox">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="muted">Invoice summary</div>
+              <h3 style="margin:6px 0 0">Extracted fields</h3>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div style="font-size:12px;color:var(--muted)">LLM provider: <strong id="llmProvider">—</strong></div>
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--success)" id="llmLed" title="LLM status"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="fields" id="fieldsArea">
+            <div class="field">
+              <h4>Invoice Number</h4><p id="invNum">—</p>
+            </div>
+            <div class="field">
+              <h4>Invoice Date</h4><p id="invDate">—</p>
+            </div>
+            <div class="field">
+              <h4>Total Amount</h4><p id="invTotal">—</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="nitbox">
+          <h4 style="margin:0 0 8px">Extracted content (preview)</h4>
+          <pre id="result" class="result">No data yet</pre>
+          <footer class="small">If you see a CORS error in the browser console, ensure backend allows this frontend origin.</footer>
+        </div>
+
+        <div class="nitbox center">
+          <div style="display:flex;gap:10px;align-items:center;justify-content:center;">
+            <a id="downloadJson" class="btn ghost" style="text-decoration:none;color:var(--muted)" href="#" download="invoice-extraction.json">Download JSON</a>
+            <button id="copyBtn" class="btn ghost">Copy JSON</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- decorative sparkles -->
+      <div class="sparkles" aria-hidden></div>
     </div>
   </div>
 
+  <!-- -------------------------
+       SCRIPT: UI + Upload logic
+       ------------------------- -->
   <script>
-    const BACKEND_URL = "https://invoice-extractor-2-835j.onrender.com/extract";
+    /* -------------------------
+       CONFIG: set your backend endpoint here
+       ------------------------- */
+    const BACKEND_URL = "https://invoice-extractor-2-835j.onrender.com/extract"; // <<=== change if needed
+    document.getElementById('endpointDisplay').textContent = BACKEND_URL;
 
-    const fileInput = document.getElementById("fileInput");
-    const uploadBtn = document.getElementById("uploadBtn");
-    const clearBtn = document.getElementById("clearBtn");
-    const output = document.getElementById("output");
-    const fileName = document.getElementById("fileName");
+    /* UI elements */
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const fileNameEl = document.getElementById('fileName');
+    const statusEl = document.getElementById('status');
+    const bar = document.getElementById('bar');
+    const lastFileEl = document.getElementById('lastFile');
+    const bytesEl = document.getElementById('bytes');
+    const resultEl = document.getElementById('result');
+    const invNumEl = document.getElementById('invNum');
+    const invDateEl = document.getElementById('invDate');
+    const invTotalEl = document.getElementById('invTotal');
+    const llmProviderEl = document.getElementById('llmProvider');
+    const llmLed = document.getElementById('llmLed');
+    const downloadJson = document.getElementById('downloadJson');
+    const copyBtn = document.getElementById('copyBtn');
 
-    const invoiceNumber = document.getElementById("invoiceNumber");
-    const invoiceDate = document.getElementById("invoiceDate");
-    const totalAmount = document.getElementById("totalAmount");
+    let currentFile = null;
+    let lastJson = null;
 
-    // file select
-    fileInput.addEventListener("change", () => {
-      if (fileInput.files.length > 0) {
-        fileName.textContent = fileInput.files[0].name;
-      }
+    /* drag + click */
+    drop.addEventListener('click', ()=> fileInput.click());
+    drop.addEventListener('dragover', (e)=>{ e.preventDefault(); drop.classList.add('hover'); });
+    drop.addEventListener('dragleave', ()=> drop.classList.remove('hover'));
+    drop.addEventListener('drop', (e)=> {
+      e.preventDefault(); drop.classList.remove('hover');
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) selectFile(f);
     });
+    fileInput.addEventListener('change', (e)=> { if (e.target.files && e.target.files[0]) selectFile(e.target.files[0]); });
 
-    // upload handler
-    uploadBtn.addEventListener("click", async () => {
-      if (!fileInput.files.length) {
-        alert("Please select a PDF first!");
+    /* file select */
+    function selectFile(file){
+      if (file.type !== "application/pdf") {
+        alert("Please select a PDF file.");
         return;
       }
-      const formData = new FormData();
-      formData.append("file", fileInput.files[0]);
+      currentFile = file;
+      fileNameEl.textContent = file.name;
+      lastFileEl.textContent = file.name;
+      bytesEl.textContent = file.size.toLocaleString() + " bytes";
+    }
 
-      output.textContent = "⏳ Uploading and extracting...";
+    /* clear */
+    clearBtn.addEventListener('click', ()=> {
+      currentFile = null;
+      fileNameEl.textContent = "Click or drop PDF here";
+      resultEl.textContent = "No data yet";
+      invNumEl.textContent = "—";
+      invDateEl.textContent = "—";
+      invTotalEl.textContent = "—";
+      statusEl.textContent = "Idle";
+      bar.style.width = "0%";
+      lastFileEl.textContent = "—";
+      bytesEl.textContent = "0";
+      lastJson = null;
+      downloadJson.href = "#";
+    });
 
+    /* upload */
+    uploadBtn.addEventListener('click', async ()=> {
+      if (!currentFile) return alert("Please select a PDF file first.");
+      await uploadFile(currentFile);
+    });
+
+    /* Upload with progress using XMLHttpRequest for progress events */
+    function uploadFile(file){
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const fd = new FormData();
+        fd.append('file', file);
+
+        xhr.open('POST', BACKEND_URL, true);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            bar.style.width = pct + "%";
+            statusEl.textContent = `Uploading ${pct}%`;
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            statusEl.textContent = "Done";
+            bar.style.width = "100%";
+            let json;
+            try { json = JSON.parse(xhr.responseText); } catch (err) {
+              resultEl.textContent = "Invalid JSON response:\n" + xhr.responseText;
+              return resolve();
+            }
+            handleResult(json);
+            return resolve(json);
+          } else {
+            statusEl.textContent = `Error ${xhr.status}`;
+            let message = `Server returned status ${xhr.status}\n\n${xhr.responseText}`;
+            resultEl.textContent = message;
+            // show LLM provider if backend returns info
+            try {
+              const obj = JSON.parse(xhr.responseText || "{}");
+              if (obj.llm_provider) setLLM(obj.llm_provider);
+            } catch(e){}
+            return resolve();
+          }
+        };
+
+        xhr.onerror = () => {
+          statusEl.textContent = "Network error";
+          resultEl.textContent = "Network or CORS error. Check console for details.";
+          console.error("Upload error", xhr);
+          return resolve();
+        };
+
+        // small UX delay
+        statusEl.textContent = "Starting upload...";
+        setTimeout(()=> xhr.send(fd), 180);
+      });
+    }
+
+    /* display + extract basic fields heuristics if needed */
+    function handleResult(json){
+      lastJson = json;
+      resultEl.textContent = JSON.stringify(json, null, 2);
+
+      // If backend returns parsed JSON in `llm_parsed` or `parsed`, use it.
+      const parsed = json.llm_parsed || json.parsed || json.parsed_basic || json.llm_parsed || json.llm_parsed;
+      if (parsed && typeof parsed === 'object') {
+        invNumEl.textContent = parsed.invoice_number || parsed.invoice_num || parsed.invoiceNo || parsed.invoice || "—";
+        invDateEl.textContent = parsed.invoice_date || parsed.date || parsed.invoiceDate || "—";
+        invTotalEl.textContent = parsed.total_amount || parsed.amount || parsed.total || "—";
+      } else {
+        // fallback: try to scan `content` or `raw_text`
+        const text = (json.content || json.raw_text || json.text || "") + "";
+        invNumEl.textContent = findPattern(text, /\b(?:Invoice\s*(?:No|Number|#)[:\s-]*)\s*([A-Z0-9-\/]+)/i) || "—";
+        invDateEl.textContent = findPattern(text, /\b(?:Invoice\s*Date|Date)[:\s]*([0-9]{1,2}[-\/.][0-9]{1,2}[-\/.][0-9]{2,4})/i) || "—";
+        invTotalEl.textContent = findPattern(text, /\b(?:Grand Total|Total Due|Total|Amount Due)[:\s]*([$₹£€]?[0-9,]+(?:\.[0-9]{2})?)/i) || "—";
+      }
+
+      // set LLM provider if backend included it
+      if (json.llm_provider) setLLM(json.llm_provider);
+      else setLLM("none");
+
+      // prepare download link for JSON
       try {
-        const res = await fetch(BACKEND_URL, {
-          method: "POST",
-          body: formData,
-        });
+        const blob = new Blob([JSON.stringify(json, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        downloadJson.href = url;
+        downloadJson.style.pointerEvents = "auto";
+      } catch(e){
+        downloadJson.href = "#";
+      }
+    }
 
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+    /* set LLM display */
+    function setLLM(name){
+      llmProviderEl.textContent = name || "none";
+      if (name && name !== "none") {
+        llmLed.style.background = "var(--accent-b)";
+      } else {
+        llmLed.style.background = "var(--danger)";
+      }
+    }
 
-        const data = await res.json();
-        output.textContent = JSON.stringify(data, null, 2);
+    /* find pattern helper */
+    function findPattern(text, re){
+      if (!text) return null;
+      const m = text.match(re);
+      return m ? (m[1] || m[0]) : null;
+    }
 
-        invoiceNumber.textContent = data?.parsed?.invoice_number || "—";
-        invoiceDate.textContent = data?.parsed?.invoice_date || "—";
-        totalAmount.textContent = data?.parsed?.total_amount || "—";
-      } catch (err) {
-        output.textContent = `❌ Error: ${err.message}`;
+    /* copy JSON to clipboard */
+    copyBtn.addEventListener('click', async () => {
+      if (!lastJson) { alert("No JSON to copy yet."); return; }
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(lastJson, null, 2));
+        copyBtn.textContent = "Copied ✓";
+        setTimeout(()=> copyBtn.textContent = "Copy JSON", 1500);
+      } catch(e){
+        alert("Copy failed: " + (e && e.message ? e.message : e));
       }
     });
 
-    // clear form
-    clearBtn.addEventListener("click", () => {
-      fileInput.value = "";
-      fileName.textContent = "Click or drag a PDF file here";
-      output.textContent = "No content yet...";
-      invoiceNumber.textContent = "—";
-      invoiceDate.textContent = "—";
-      totalAmount.textContent = "—";
+    /* keyboard accessibility: press Enter on drop to open chooser */
+    drop.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') fileInput.click();
     });
+
+    /* On page load: small animated intro */
+    window.addEventListener('load', ()=>{
+      setTimeout(()=> {
+        document.querySelector('.wrap').style.transform = 'translateY(-4px)';
+      }, 200);
+    });
+
+    /* Helpful console tip */
+    console.info("Invoice Extractor frontend initialized. Backend:", BACKEND_URL);
   </script>
 </body>
 </html>
