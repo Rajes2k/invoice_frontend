@@ -264,40 +264,52 @@ function uploadFile(file){
 }
 
 function handleResult(json){
-  lastJson=json;
-  // Prefer parsed structured
-  const parsed = json.llm_parsed||json.parsed||json.parsed_basic||{};
-  invNumEl.textContent = parsed.invoice_number||parsed.invoiceNum||"—";
-  invDateEl.textContent = parsed.invoice_date||parsed.date||"—";
-  invTotalEl.textContent = parsed.total_amount||parsed.total||parsed.amount||"—";
+  lastJson = json;
 
-  // Prepare line-by-line AI preview
-  const lines = [];
-  if(invNumEl.textContent!=="—") lines.push(`Invoice Number: ${invNumEl.textContent}`);
-  if(invDateEl.textContent!=="—") lines.push(`Invoice Date: ${invDateEl.textContent}`);
-  if(invTotalEl.textContent!=="—") lines.push(`Total Amount: ${invTotalEl.textContent}`);
-  // Add remaining fields if exist
-  for(const k in parsed){ if(!["invoice_number","invoiceNum","invoice_date","date","total_amount","total","amount"].includes(k)){
-    lines.push(`${k}: ${parsed[k]}`);
-  }}
+  // Use parsed fields for UI cards
+  const parsed = json.parsed || {};
+  invNumEl.textContent = parsed.invoice_number || "—";
+  invDateEl.textContent = parsed.invoice_date || "—";
+  invTotalEl.textContent = parsed.total_amount || "—";
 
-  aiPreview.textContent=""; resultEl.textContent=""; let i=0;
-  function typeNextLine(){
-    if(i>=lines.length){
-      resultEl.textContent = JSON.stringify(json,null,2);
-      const blob = new Blob([JSON.stringify(json,null,2)],{type:'application/json'});
+  // Prepare AI typing preview
+  const content = json.content || "";
+  const lines = content.split(/\r?\n/).filter(l => l.trim() !== ""); // keep non-empty lines
+
+  aiPreview.textContent = "";
+  resultEl.textContent = ""; // clear final JSON until typing finishes
+
+  let i = 0;
+
+  function typeNextLine() {
+    if (i >= lines.length) {
+      // After typing all lines, show full JSON
+      resultEl.textContent = JSON.stringify(json, null, 2);
+      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
       downloadJson.href = URL.createObjectURL(blob);
-      copyBtn.onclick = ()=>navigator.clipboard.writeText(JSON.stringify(json,null,2)).then(()=>alert("JSON copied!"));
+      copyBtn.onclick = () => navigator.clipboard.writeText(JSON.stringify(json, null, 2))
+        .then(() => alert("JSON copied!"));
       return;
     }
-    let line=lines[i]; let pos=0;
-    function typeChar(){
-      if(pos>=line.length){ aiPreview.appendChild(document.createElement('br')); i++; setTimeout(typeNextLine,250); return; }
-      aiPreview.textContent+=line[pos]; pos++;
-      setTimeout(typeChar,18+Math.random()*20);
+
+    let line = lines[i];
+    let pos = 0;
+
+    function typeChar() {
+      if (pos >= line.length) {
+        aiPreview.appendChild(document.createElement('br')); // line break
+        i++;
+        setTimeout(typeNextLine, 200); // delay between lines
+        return;
+      }
+      aiPreview.textContent += line[pos];
+      pos++;
+      setTimeout(typeChar, 15 + Math.random() * 15); // type each character with slight randomness
     }
+
     typeChar();
   }
+
   typeNextLine();
 }
 
