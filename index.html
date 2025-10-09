@@ -274,7 +274,7 @@ function handleResult(json){
 
   // Prepare AI typing preview
   const content = json.content || "";
-  // Split content into lines; preserve meaningful empty lines
+  // Split content into lines; keep empty lines for spacing
   const lines = content.split(/\r?\n/);
 
   aiPreview.textContent = "";
@@ -284,8 +284,10 @@ function handleResult(json){
 
   function typeNextLine() {
     if (i >= lines.length) {
-      // After typing all lines, show full JSON in result
+      // After all lines typed, show full JSON in the result section
       resultEl.textContent = JSON.stringify(json, null, 2);
+
+      // Prepare download and copy
       const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
       downloadJson.href = URL.createObjectURL(blob);
       copyBtn.onclick = () => navigator.clipboard.writeText(JSON.stringify(json, null, 2))
@@ -300,14 +302,14 @@ function handleResult(json){
       if (pos >= line.length) {
         aiPreview.appendChild(document.createElement('br')); // new line
         i++;
-        aiPreview.scrollTop = aiPreview.scrollHeight; // auto-scroll
-        setTimeout(typeNextLine, 200); // small delay between lines
+        aiPreview.scrollTop = aiPreview.scrollHeight; // auto-scroll while typing
+        setTimeout(typeNextLine, 150); // small delay between lines
         return;
       }
       aiPreview.textContent += line[pos];
       pos++;
       aiPreview.scrollTop = aiPreview.scrollHeight; // scroll while typing
-      setTimeout(typeChar, 15 + Math.random() * 20); // random typing speed
+      setTimeout(typeChar, 10 + Math.random() * 20); // character-by-character random speed
     }
 
     typeChar();
@@ -315,6 +317,7 @@ function handleResult(json){
 
   typeNextLine();
 }
+
 
 // Theme toggle
 themeToggle.addEventListener('click', ()=>{
